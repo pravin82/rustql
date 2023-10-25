@@ -1,21 +1,27 @@
 use std::str::FromStr;
+use crate::row::Row;
 
-pub enum Statement{
+pub enum StatementType{
     INSERT,
     UPDATE,
     SELECT
 }
 
-impl FromStr for Statement {
+impl FromStr for StatementType {
 
     type Err = ();
 
-    fn from_str(input: &str) -> Result<Statement, Self::Err> {
+    fn from_str(input: &str) -> Result<StatementType, Self::Err> {
         match input {
-            "insert"  => Ok(Statement::INSERT),
-            "update"  => Ok(Statement::UPDATE),
-            "select"  => Ok(Statement::SELECT),
+            "insert"  => Ok(StatementType::INSERT),
+            "update"  => Ok(StatementType::UPDATE),
+            "select"  => Ok(StatementType::SELECT),
             _      => Err(()),
         }
     }
+}
+
+struct Statement{
+    statement_type :StatementType,
+    row_to_insert: Row
 }

@@ -1,12 +1,12 @@
 mod statement;
-
+mod row;
 use std::io;
 use std::io::SeekFrom::Start;
 use std::io::Write;
 use std::os::macos::raw::stat;
 use std::process::exit;
 use std::str::FromStr;
-use crate::statement::Statement;
+use crate::statement::StatementType;
 
 fn main() {
    while(true){
@@ -46,9 +46,9 @@ fn execute_meta_command(command: &str){
 fn execute_statement(command:&str){
  if let Ok(statement) =  get_command_type(command) {
     match statement {
-       Statement::INSERT => println!("Insert will be executed"),
-       Statement::UPDATE => println!("Update statement will be exeucted"),
-       Statement::SELECT => println!("select will be executed")
+       StatementType::INSERT => println!("Insert will be executed"),
+       StatementType::UPDATE => println!("Update statement will be exeucted"),
+       StatementType::SELECT => println!("select will be executed")
     }
  }
    else {
@@ -56,9 +56,9 @@ fn execute_statement(command:&str){
    }
 }
 
-fn get_command_type(command:&str) -> Result<Statement, ()>{
+fn get_command_type(command:&str) -> Result<StatementType, ()>{
    let chunks: Vec<&str> =  command.split(" ").collect();
-   let f = Statement::from_str(chunks[0]);
+   let f = StatementType::from_str(chunks[0]);
    return f
 }
 
