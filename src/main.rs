@@ -1,9 +1,12 @@
+mod statement;
+
 use std::io;
 use std::io::SeekFrom::Start;
 use std::io::Write;
 use std::os::macos::raw::stat;
 use std::process::exit;
 use std::str::FromStr;
+use crate::statement::Statement;
 
 fn main() {
    while(true){
@@ -59,24 +62,6 @@ fn get_command_type(command:&str) -> Result<Statement, ()>{
    return f
 }
 
-enum Statement{
-   INSERT,
-   UPDATE,
-   SELECT
-}
 
-impl FromStr for Statement {
-
-   type Err = ();
-
-   fn from_str(input: &str) -> Result<Statement, Self::Err> {
-      match input {
-         "insert"  => Ok(Statement::INSERT),
-         "update"  => Ok(Statement::UPDATE),
-         "select"  => Ok(Statement::SELECT),
-         _      => Err(()),
-      }
-   }
-}
 
 
