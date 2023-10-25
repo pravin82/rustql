@@ -1,6 +1,9 @@
 use std::io;
+use std::io::SeekFrom::Start;
 use std::io::Write;
+use std::os::macos::raw::stat;
 use std::process::exit;
+use std::str::FromStr;
 
 fn main() {
    while(true){
@@ -8,12 +11,14 @@ fn main() {
       let mut line = String::new();
       let command_string = std::io::stdin().read_line(&mut line).unwrap();
       let command = line.trim();
-      if(command == ".exit"){
-         exit(0)
+      if(command.starts_with(".")){
+         execute_meta_command(command)  ;
+         continue
       }
       else {
-         println!("Unrecognised command '{}'", command)
+         execute_statement(command)
       }
+
 
    }
     
@@ -23,6 +28,55 @@ fn print_prompt(){
    print!("db > ");
    io::stdout().flush();
 
+}
+
+fn execute_meta_command(command: &str){
+   if(command == ".exit"){
+      exit(0)
+   }
+   else {
+      println!("Unrecognised command '{}'", command)
+   }
+
+}
+
+fn execute_statement(command:&str){
+ if let Ok(statement) =  get_command_type(command) {
+    match statement {
+       Statement::INSERT => println!("Insert will be executed"),
+       Statement::UPDATE => println!("Update statement will be exeucted"),
+       Statement::SELECT => println!("select will be executed")
+    }
+ }
+   else {
+      println!("wrong command")
+   }
+}
+
+fn get_command_type(command:&str) -> Result<Statement, ()>{
+   let chunks: Vec<&str> =  command.split(" ").collect();
+   let f = Statement::from_str(chunks[0]);
+   return f
+}
+
+enum Statement{
+   INSERT,
+   UPDATE,
+   SELECT
+}
+
+impl FromStr for Statement {
+
+   type Err = ();
+
+   fn from_str(input: &str) -> Result<Statement, Self::Err> {
+      match input {
+         "insert"  => Ok(Statement::INSERT),
+         "update"  => Ok(Statement::UPDATE),
+         "select"  => Ok(Statement::SELECT),
+         _      => Err(()),
+      }
+   }
 }
 
 
