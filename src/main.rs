@@ -1,5 +1,7 @@
 mod statement;
 mod row;
+mod table;
+
 use std::io;
 use std::io::SeekFrom::Start;
 use std::io::Write;
