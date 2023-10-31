@@ -1,5 +1,6 @@
 use std::str::FromStr;
-use crate::row::Row;
+use crate::table::row::Row;
+
 
 pub enum StatementType{
     INSERT,

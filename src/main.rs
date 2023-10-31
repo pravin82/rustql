@@ -1,5 +1,4 @@
 mod statement;
-mod row;
 mod table;
 
 use std::io;
