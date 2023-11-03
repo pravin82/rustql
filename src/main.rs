@@ -19,6 +19,7 @@ use crate::table::row::{Row, ROW_SIZE};
       let mut line = String::new();
       let command_string = std::io::stdin().read_line(&mut line).unwrap();
       let command = line.trim();
+      if(command.is_empty()) {continue}
       if(command.starts_with(".")){
          execute_meta_command(command)  ;
          continue
