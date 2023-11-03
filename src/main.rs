@@ -55,8 +55,8 @@ unsafe fn execute_statement(command:&str, table:&mut Table){
  let statement = Statement::prepare_statement(command);
     match statement.statement_type {
        StatementType::INSERT =>{
-         execute_insert(statement,table).expect("Insert failed");
-             ()
+        let result =  execute_insert(statement,table).expect("Insert failed");
+             if(result == "EXECUTE_SUCCESS"){println!("Executed.")}
        } 
        StatementType::UPDATE => println!("Update statement will be exeucted"),
        StatementType::SELECT => {
