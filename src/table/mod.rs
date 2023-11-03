@@ -25,6 +25,13 @@ impl Table{
             pages,
         }
     }
+
+    pub fn free_table(self){
+       for page in self.pages.into_iter(){
+           drop(page)
+       }
+        drop(self)
+    }
    //row_num starts from 0
    pub unsafe fn row_slot(&mut self, row_num:u32) -> *mut u8{
        let page_num = row_num/ROWS_PER_PAGE;
