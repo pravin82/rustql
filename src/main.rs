@@ -8,10 +8,9 @@ use rustql;
     let mut table = rustql::Table::new_table();
    while(true){
       print_prompt();
-      let mut line = String::new();
-      let command_string = io::stdin().read_line(&mut line).unwrap();
-      let command = line.trim();
-      rustql::run(command, &mut table);
+      let mut command = String::new();
+       io::stdin().read_line(&mut command).unwrap();
+      rustql::run(command, &mut table, &mut io::stdout());
    }
     
 }

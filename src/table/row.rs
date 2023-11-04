@@ -1,4 +1,5 @@
 use std::{mem, ptr};
+use std::io::Write;
 
 pub const COLUMN_USERNAME_SIZE: usize = 32;
 pub const COLUMN_EMAIL_SIZE:usize = 255;
@@ -86,13 +87,14 @@ impl Row {
             email
         }
     }
-    pub fn print_row(row: Row) {
+    pub fn print_row(row: Row, writer: &mut impl Write) -> std::io::Result<()> {
 
-        println!("{},{:?},{:?}",
-                 row.id,
+        writeln!(writer,"{:?},{:?},{:?}",
+                  row.id,
                  remove_default_chars(&row.username),
                  remove_default_chars(&row.email)
         )
+
     }
 
 

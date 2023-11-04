@@ -11,7 +11,8 @@ use crate::statement::{Statement, StatementType};
 use crate::table::row::{Row, ROW_SIZE};
 
 
-pub fn run(command:&str, table: &mut Table){
+pub fn run(command:String, table: &mut Table,mut writer: impl Write){
+    let command = command.trim();
     if(command.is_empty()) {return}
     if(command.starts_with(".")){
         execute_meta_command(command)  ;
@@ -19,7 +20,7 @@ pub fn run(command:&str, table: &mut Table){
     }
     else {
         unsafe {
-            execute_statement(command,table)
+            execute_statement(command,table,writer)
         }
     }
 
@@ -37,16 +38,23 @@ fn execute_meta_command(command: &str){
 
 }
 
-unsafe fn execute_statement(command:&str, table:&mut Table){
+unsafe fn execute_statement(command:&str, table:&mut Table,mut writer: impl Write){
     let statement = Statement::prepare_statement(command);
     match statement.statement_type {
         StatementType::INSERT =>{
             let result =  execute_insert(statement,table).expect("Insert failed");
-            if(result == "EXECUTE_SUCCESS"){println!("Executed.")}
+            if(result == "EXECUTE_SUCCESS"){
+               let result =  writeln!(writer,"Executed.");
+                ()
+
+            }
         }
-        StatementType::UPDATE => println!("Update statement will be exeucted"),
+        StatementType::UPDATE => {
+           let result =  writeln!(writer,"Update statement will be exeucted");
+            ()
+        }
         StatementType::SELECT => {
-            execute_select(table);
+            execute_select(table,writer);
             ()
 
         }
@@ -67,7 +75,7 @@ unsafe  fn execute_insert(statement:Statement,  table: &mut Table) ->Result<&'st
     return Ok("EXECUTE_SUCCESS")
 }
 
-unsafe  fn execute_select(table:&mut Table)->Result<&'static str, Error>{
+unsafe  fn execute_select(table:&mut Table, mut writer:  impl Write) ->Result<&'static str, Error>{
     for i in 0..table.num_rows{
         let row_ptr = table.row_slot(i);
         let mut bytes:[u8;ROW_SIZE] = [0u8;ROW_SIZE];
@@ -75,7 +83,8 @@ unsafe  fn execute_select(table:&mut Table)->Result<&'static str, Error>{
             bytes[i] = ptr::read(row_ptr.offset(i as isize));
         }
         let deserialized_row = Row::deserialize_row(&bytes);
-        Row::print_row(deserialized_row)
+        let result = Row::print_row(deserialized_row,& mut writer);
+        ()
 
     }
     Ok("SUCCESS")
