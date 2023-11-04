@@ -9,6 +9,7 @@ use std::process::exit;
 use std::str::FromStr;
 use crate::statement::{Statement, StatementType};
 use crate::table::row::{Row, ROW_SIZE};
+use crate::table::ROWS_PER_PAGE;
 
 
 pub fn run(command:String, table: &mut Table,mut writer: impl Write){
@@ -42,10 +43,16 @@ unsafe fn execute_statement(command:&str, table:&mut Table,mut writer: impl Writ
     let statement = Statement::prepare_statement(command);
     match statement.statement_type {
         StatementType::INSERT =>{
-            let result =  execute_insert(statement,table).expect("Insert failed");
-            if(result == "EXECUTE_SUCCESS"){
-               let result =  writeln!(writer,"Executed.");
-                ()
+            let insert_resp_result =  execute_insert(statement,table);
+            let insert_resp = match insert_resp_result {
+                Ok(resp) => resp,
+                Err(e) => e.to_string()
+            };
+            if(insert_resp == "EXECUTE_SUCCESS"){
+                writeln!(writer,"Executed.");
+            }
+            else {
+                writeln!(writer, "{}", insert_resp);
 
             }
         }
@@ -64,7 +71,7 @@ unsafe fn execute_statement(command:&str, table:&mut Table,mut writer: impl Writ
 
 
 
-unsafe  fn execute_insert(statement:Statement,  table: &mut Table) ->Result<&'static str, Error>{
+unsafe  fn execute_insert(statement:Statement,  table: &mut Table) ->Result<String, Error>{
     let row = statement.row_to_insert;
     if(table.num_rows>= TABLE_MAX_ROWS){
         return Err(Error::new(ErrorKind::Other,"Table is full"));
@@ -72,7 +79,7 @@ unsafe  fn execute_insert(statement:Statement,  table: &mut Table) ->Result<&'st
     let row_slot = table.row_slot(table.num_rows);
     row.serialize_row(row_slot);
     table.num_rows = table.num_rows +1;
-    return Ok("EXECUTE_SUCCESS")
+    return Ok("EXECUTE_SUCCESS".parse().unwrap())
 }
 
 unsafe  fn execute_select(table:&mut Table, mut writer:  impl Write) ->Result<&'static str, Error>{

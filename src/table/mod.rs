@@ -6,7 +6,7 @@ pub mod row;
 const TABLE_MAX_PAGES: u32 = 100;
 const  PAGE_SIZE: u32 = 4096;
 
-const ROWS_PER_PAGE:u32 = (PAGE_SIZE as usize/ROW_SIZE) as u32;
+pub const ROWS_PER_PAGE:u32 = (PAGE_SIZE as usize/ROW_SIZE) as u32;
 pub const TABLE_MAX_ROWS:u32 = ROWS_PER_PAGE*TABLE_MAX_PAGES;
 pub struct Table{
   pub num_rows: u32,
@@ -17,7 +17,7 @@ pub struct Table{
 
 impl Table{
 
-    pub fn new_table() -> Table{
+    pub   fn new_table() -> Table{
 
         let pages: Box<[Option<*mut u8>; TABLE_MAX_PAGES as usize]> = Box::new([None; TABLE_MAX_PAGES as usize]);
         Table{
