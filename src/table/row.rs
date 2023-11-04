@@ -32,7 +32,7 @@ const EMAIL_SIZE:usize =  field_size!(Row::email);
 const ID_OFFSET:usize = 0;
 const USERNAME_OFFSET:usize = (ID_OFFSET + ID_SIZE);
 const EMAIL_OFFSET:usize = USERNAME_OFFSET+USERNAME_SIZE;
-pub(crate) const ROW_SIZE:usize = ID_SIZE + USERNAME_SIZE + EMAIL_SIZE;
+pub const ROW_SIZE:usize = ID_SIZE + USERNAME_SIZE + EMAIL_SIZE;
 
 
 
