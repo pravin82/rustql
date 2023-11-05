@@ -53,8 +53,8 @@ impl Row {
             }
 
             // Convert the username characters to bytes before copying
-            let username_bytes: Vec<u8> = char_array_to_bytes1(&self.username);
-            let email_bytes: Vec<u8> = char_array_to_bytes1(&self.email);
+            let username_bytes: Vec<u8> = char_array_to_bytes(&self.username);
+            let email_bytes: Vec<u8> = char_array_to_bytes(&self.email);
             //email_str.as_bytes().to_vec();
 
             for i in 0..USERNAME_SIZE {
@@ -107,11 +107,6 @@ fn char_to_bytes(c: char) -> [u8; 4] {
 }
 
 fn char_array_to_bytes(char_array: &[char]) -> Vec<u8> {
-    char_array.iter().map(|&c| char_to_bytes(c)).collect::<Vec<[u8;4]>>()
-        .into_iter().flatten().collect::<Vec<u8>>()
-}
-
-fn char_array_to_bytes1(char_array: &[char]) -> Vec<u8> {
     let mut result = Vec::with_capacity(char_array.len() * 4);
     for &c in char_array {
         result.extend_from_slice(&char_to_bytes(c));

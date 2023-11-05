@@ -6,7 +6,6 @@ pub use crate::table::{Table, TABLE_MAX_ROWS};
 use std::{ptr};
 use std::io::{Error, ErrorKind, Write};
 use std::process::exit;
-use std::str::FromStr;
 use crate::statement::{Statement, StatementType};
 use crate::table::row::{Row, ROW_SIZE};
 
@@ -95,11 +94,5 @@ unsafe  fn execute_select(table:&mut Table, mut writer:  impl Write) ->Result<&'
     }
     Ok("SUCCESS")
 
-}
-
-fn get_command_type(command:&str) -> Result<StatementType, ()>{
-    let chunks: Vec<&str> =  command.split(' ').collect();
-    
-    StatementType::from_str(chunks[0])
 }
 
