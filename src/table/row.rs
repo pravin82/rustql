@@ -49,7 +49,7 @@ impl Row {
             let x = u32::to_be_bytes(self.id);
             for i in 0..4 {
                 let id_byte = x[i];
-                ptr::copy(&id_byte, destination_ptr.offset((ID_OFFSET + i) as isize), 1);
+                ptr::copy(&id_byte, destination_ptr.add(ID_OFFSET + i), 1);
             }
 
             // Convert the username characters to bytes before copying
@@ -59,11 +59,11 @@ impl Row {
 
             for i in 0..USERNAME_SIZE {
                 let byte = username_bytes[i];
-                ptr::copy(&byte, destination_ptr.offset((USERNAME_OFFSET + i) as isize), 1);
+                ptr::copy(&byte, destination_ptr.add(USERNAME_OFFSET + i), 1);
             }
             for i in 0..EMAIL_SIZE {
                 let byte = email_bytes[i];
-                ptr::copy(&byte, destination_ptr.offset((EMAIL_OFFSET + i) as isize), 1);
+                ptr::copy(&byte, destination_ptr.add(EMAIL_OFFSET + i), 1);
             }
         }
     }

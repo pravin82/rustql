@@ -15,9 +15,8 @@ use crate::table::row::{Row, ROW_SIZE};
 pub fn run(command:String, table: &mut Table,writer: impl Write){
     let command = command.trim();
     if command.is_empty() {return}
-    if command.starts_with(".") {
+    if command.starts_with('.') {
         execute_meta_command(command)  ;
-        return
     }
     else {
         unsafe {
@@ -58,11 +57,11 @@ unsafe fn execute_statement(command:&str, table:&mut Table,mut writer: impl Writ
         }
         StatementType::UPDATE => {
            let _result =  writeln!(writer,"Update statement will be exeucted");
-            ()
+            
         }
         StatementType::SELECT => {
             execute_select(table,writer);
-            ()
+            
 
         }
     }
@@ -78,8 +77,8 @@ unsafe  fn execute_insert(statement:Statement,  table: &mut Table) ->Result<Stri
     }
     let row_slot = table.row_slot(table.num_rows);
     row.serialize_row(row_slot);
-    table.num_rows = table.num_rows +1;
-    return Ok("EXECUTE_SUCCESS".parse().unwrap())
+    table.num_rows += 1;
+    Ok("EXECUTE_SUCCESS".parse().unwrap())
 }
 
 unsafe  fn execute_select(table:&mut Table, mut writer:  impl Write) ->Result<&'static str, Error>{
@@ -87,11 +86,11 @@ unsafe  fn execute_select(table:&mut Table, mut writer:  impl Write) ->Result<&'
         let row_ptr = table.row_slot(i);
         let mut bytes:[u8;ROW_SIZE] = [0u8;ROW_SIZE];
         for  i in 0..ROW_SIZE{
-            bytes[i] = ptr::read(row_ptr.offset(i as isize));
+            bytes[i] = ptr::read(row_ptr.add(i));
         }
         let deserialized_row = Row::deserialize_row(&bytes);
         let _result = Row::print_row(deserialized_row,& mut writer);
-        ()
+        
 
     }
     Ok("SUCCESS")
@@ -99,8 +98,8 @@ unsafe  fn execute_select(table:&mut Table, mut writer:  impl Write) ->Result<&'
 }
 
 fn get_command_type(command:&str) -> Result<StatementType, ()>{
-    let chunks: Vec<&str> =  command.split(" ").collect();
-    let f = StatementType::from_str(chunks[0]);
-    return f
+    let chunks: Vec<&str> =  command.split(' ').collect();
+    
+    StatementType::from_str(chunks[0])
 }
 

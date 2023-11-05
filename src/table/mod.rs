@@ -44,8 +44,8 @@ impl Table{
           mem::forget(new_page);
           self.pages[page_num as usize] = page_ptr
       }
-      let row_ptr  = page_ptr.unwrap().offset(byte_offset as isize);
-      row_ptr
+      
+      page_ptr.unwrap().add(byte_offset)
    }
 
 

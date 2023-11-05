@@ -30,7 +30,7 @@ pub struct Statement{
 
 impl Statement{
     pub(crate) fn prepare_statement(command:&str) -> Statement{
-        let chunks: Vec<&str> =  command.split(" ").collect();
+        let chunks: Vec<&str> =  command.split(' ').collect();
         let statement_type = StatementType::from_str(chunks[0]).expect("Wrong statement");
         let mut row_to_insert = Row {
             id:0,
@@ -56,7 +56,7 @@ impl Statement{
 
         Statement{
             statement_type,
-            row_to_insert: row_to_insert,
+            row_to_insert,
         }
 
     }

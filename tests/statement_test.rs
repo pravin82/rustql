@@ -1,4 +1,4 @@
-use rustql;
+
 use rustql::{Table, TABLE_MAX_ROWS};
 
 #[test]
