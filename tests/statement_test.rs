@@ -20,7 +20,7 @@ fn test_table_full(){
 
     for i in 0..TABLE_MAX_ROWS+1{
         rustql::run(format!("insert {} pravin{} email{}",i,i,i), &mut table,&mut result);
-        if(i < TABLE_MAX_ROWS){
+        if i < TABLE_MAX_ROWS {
             assert_eq!(result, b"Executed.\n" )
         }
         else {

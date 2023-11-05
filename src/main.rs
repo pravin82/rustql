@@ -6,7 +6,7 @@ use rustql;
 
  fn main() {
     let mut table = rustql::Table::new_table();
-   while(true){
+   loop{
       print_prompt();
       let mut command = String::new();
        io::stdin().read_line(&mut command).unwrap();

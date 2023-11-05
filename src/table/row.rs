@@ -1,4 +1,4 @@
-use std::{mem, ptr};
+use std::{ptr};
 use std::io::Write;
 
 pub const COLUMN_USERNAME_SIZE: usize = 32;
@@ -31,7 +31,7 @@ const ID_SIZE: usize = field_size!(Row::id);
 const USERNAME_SIZE:usize =  field_size!(Row::username);
 const EMAIL_SIZE:usize =  field_size!(Row::email);
 const ID_OFFSET:usize = 0;
-const USERNAME_OFFSET:usize = (ID_OFFSET + ID_SIZE);
+const USERNAME_OFFSET:usize = ID_OFFSET + ID_SIZE;
 const EMAIL_OFFSET:usize = USERNAME_OFFSET+USERNAME_SIZE;
 pub const ROW_SIZE:usize = ID_SIZE + USERNAME_SIZE + EMAIL_SIZE;
 

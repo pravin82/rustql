@@ -3,19 +3,19 @@ mod statement;
 
 
 pub use crate::table::{Table, TABLE_MAX_ROWS};
-use std::{io, ptr};
+use std::{ptr};
 use std::io::{Error, ErrorKind, Write};
 use std::process::exit;
 use std::str::FromStr;
 use crate::statement::{Statement, StatementType};
 use crate::table::row::{Row, ROW_SIZE};
-use crate::table::ROWS_PER_PAGE;
 
 
-pub fn run(command:String, table: &mut Table,mut writer: impl Write){
+
+pub fn run(command:String, table: &mut Table,writer: impl Write){
     let command = command.trim();
-    if(command.is_empty()) {return}
-    if(command.starts_with(".")){
+    if command.is_empty() {return}
+    if command.starts_with(".") {
         execute_meta_command(command)  ;
         return
     }
@@ -30,7 +30,7 @@ pub fn run(command:String, table: &mut Table,mut writer: impl Write){
 
 
 fn execute_meta_command(command: &str){
-    if(command == ".exit"){
+    if command == ".exit" {
         exit(0)
     }
     else {
@@ -48,7 +48,7 @@ unsafe fn execute_statement(command:&str, table:&mut Table,mut writer: impl Writ
                 Ok(resp) => resp,
                 Err(e) => e.to_string()
             };
-            if(insert_resp == "EXECUTE_SUCCESS"){
+            if insert_resp == "EXECUTE_SUCCESS" {
                 writeln!(writer,"Executed.");
             }
             else {
@@ -57,7 +57,7 @@ unsafe fn execute_statement(command:&str, table:&mut Table,mut writer: impl Writ
             }
         }
         StatementType::UPDATE => {
-           let result =  writeln!(writer,"Update statement will be exeucted");
+           let _result =  writeln!(writer,"Update statement will be exeucted");
             ()
         }
         StatementType::SELECT => {
@@ -73,7 +73,7 @@ unsafe fn execute_statement(command:&str, table:&mut Table,mut writer: impl Writ
 
 unsafe  fn execute_insert(statement:Statement,  table: &mut Table) ->Result<String, Error>{
     let row = statement.row_to_insert;
-    if(table.num_rows>= TABLE_MAX_ROWS){
+    if table.num_rows>= TABLE_MAX_ROWS {
         return Err(Error::new(ErrorKind::Other,"Table is full"));
     }
     let row_slot = table.row_slot(table.num_rows);
@@ -90,7 +90,7 @@ unsafe  fn execute_select(table:&mut Table, mut writer:  impl Write) ->Result<&'
             bytes[i] = ptr::read(row_ptr.offset(i as isize));
         }
         let deserialized_row = Row::deserialize_row(&bytes);
-        let result = Row::print_row(deserialized_row,& mut writer);
+        let _result = Row::print_row(deserialized_row,& mut writer);
         ()
 
     }

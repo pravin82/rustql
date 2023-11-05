@@ -1,4 +1,4 @@
-use std::ptr::null;
+
 use std::str::FromStr;
 use crate::table::row::{COLUMN_EMAIL_SIZE, COLUMN_USERNAME_SIZE, Row};
 
@@ -37,7 +37,7 @@ impl Statement{
             username:['a';COLUMN_USERNAME_SIZE],
             email:['a';COLUMN_EMAIL_SIZE],
         };
-        if(statement_type == StatementType::INSERT) {
+        if statement_type == StatementType::INSERT {
             let id_str = chunks[1];
             let id = id_str.parse().unwrap();
             let mut username: [char; COLUMN_USERNAME_SIZE] = ['\0'; COLUMN_USERNAME_SIZE];

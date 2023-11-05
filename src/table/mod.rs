@@ -38,7 +38,7 @@ impl Table{
        let mut page_ptr = self.pages[page_num as usize];
        let row_offset =  (row_num as usize % ROWS_PER_PAGE as usize)*ROW_SIZE;
        let byte_offset = row_offset * ROW_SIZE;
-      if(page_ptr.is_none()){
+      if page_ptr.is_none() {
           let mut new_page:Box<[u8;ROW_SIZE]> =Box::new([0u8;ROW_SIZE]);
           page_ptr = Some(new_page.as_mut_ptr());
           mem::forget(new_page);
