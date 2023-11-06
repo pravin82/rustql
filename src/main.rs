@@ -5,7 +5,7 @@ use std::io::{ Write};
 
 
  fn main() {
-    let mut table = rustql::Table::new_table();
+    let mut table =rustql::table::table::Table::new_table();
    loop{
       print_prompt();
       let mut command = String::new();

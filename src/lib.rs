@@ -1,14 +1,14 @@
 pub mod table;
 mod statement;
+mod pager;
 
 
-pub use crate::table::{Table, TABLE_MAX_ROWS};
 use std::{ptr};
 use std::io::{Error, ErrorKind, Write};
 use std::process::exit;
 use crate::statement::{Statement, StatementType};
 use crate::table::row::{Row, ROW_SIZE};
-
+use crate::table::table::{Table, TABLE_MAX_ROWS};
 
 
 pub fn run(command:String, table: &mut Table,writer: impl Write){

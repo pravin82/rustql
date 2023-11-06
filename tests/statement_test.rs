@@ -1,5 +1,5 @@
 use std::fmt::format;
-use rustql::{Table, TABLE_MAX_ROWS};
+use rustql::table::table::{Table, TABLE_MAX_ROWS};
 use rustql::table::row::{COLUMN_EMAIL_SIZE, COLUMN_USERNAME_SIZE};
 
 
@@ -75,6 +75,7 @@ fn id_must_be_positive(){
     table.free_table();
 
 }
+
 fn repeat_character(character: &str, count: usize) -> String {
     let mut result = String::new();
     for _ in 0..count {
