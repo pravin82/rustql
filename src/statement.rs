@@ -45,7 +45,7 @@ impl Statement{
             for (i, c) in chunks[2].chars().take(COLUMN_USERNAME_SIZE).enumerate() {
                 username[i] = c;
             }
-            for (i, c) in chunks[3].chars().take(COLUMN_USERNAME_SIZE).enumerate() {
+            for (i, c) in chunks[3].chars().take(COLUMN_EMAIL_SIZE).enumerate() {
                 email[i] = c;
             }
             row_to_insert = Row{id,username,email};

@@ -1,4 +1,4 @@
-mod table;
+pub mod table;
 mod statement;
 
 

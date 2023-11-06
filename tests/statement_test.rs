@@ -1,5 +1,7 @@
-
+use std::fmt::format;
 use rustql::{Table, TABLE_MAX_ROWS};
+use rustql::table::row::{COLUMN_EMAIL_SIZE, COLUMN_USERNAME_SIZE};
+
 
 #[test]
 fn it_insert_and_select() {
@@ -31,4 +33,37 @@ fn test_table_full(){
     table.free_table()
 
 }
+
+#[test]
+fn max_string_length_insert(){
+    let   mut table: Table = Table::new_table();
+    let mut result = Vec::new();
+    let username:String = ['a'; COLUMN_USERNAME_SIZE].iter().collect();
+    let email:String = ['b'; COLUMN_EMAIL_SIZE].iter().collect();
+    rustql::run(format!("insert 1 {} {}",username,email), &mut table,&mut result);
+    assert_eq!(result, b"Executed.\n");
+    result = Vec::new();
+    rustql::run("select".to_string(), &mut table,&mut result);
+    let printed_username = format!("[{}]", repeat_character("a", COLUMN_USERNAME_SIZE));
+    let printed_email = format!("[{}]", repeat_character("b", COLUMN_EMAIL_SIZE));
+    let expected_result = format!("1,{},{}\n",printed_username,printed_email);
+    assert_eq!(result, expected_result.as_bytes());
+    table.free_table()
+
+}
+fn repeat_character(character: &str, count: usize) -> String {
+    let mut result = String::new();
+    for _ in 0..count {
+        result.push('\'');
+        result.push_str(character);
+        result.push('\'');
+        result.push(',');
+        result.push(' ');
+    }
+    result.pop();
+    result.pop();// Remove the trailing comma
+    result
+}
+
+
 
