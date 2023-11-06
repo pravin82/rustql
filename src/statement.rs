@@ -1,4 +1,4 @@
-
+use std::io::{Error, ErrorKind};
 use std::str::FromStr;
 use crate::table::row::{COLUMN_EMAIL_SIZE, COLUMN_USERNAME_SIZE, Row};
 
@@ -29,7 +29,7 @@ pub struct Statement{
 }
 
 impl Statement{
-    pub(crate) fn prepare_statement(command:&str) -> Statement{
+    pub(crate) fn prepare_statement(command:&str) -> Result<Statement,Error>{
         let chunks: Vec<&str> =  command.split(' ').collect();
         let statement_type = StatementType::from_str(chunks[0]).expect("Wrong statement");
         let mut row_to_insert = Row {
@@ -39,13 +39,18 @@ impl Statement{
         };
         if statement_type == StatementType::INSERT {
             let id_str = chunks[1];
+            let username_chunks = chunks[2];
+            let email_chunks = chunks[3];
+            if(username_chunks.len()> COLUMN_USERNAME_SIZE || email_chunks.len() > COLUMN_EMAIL_SIZE){
+                  return Err(Error::new(ErrorKind::Other,"String is too long."));
+            }
             let id = id_str.parse().unwrap();
             let mut username: [char; COLUMN_USERNAME_SIZE] = ['\0'; COLUMN_USERNAME_SIZE];
             let mut email: [char;COLUMN_EMAIL_SIZE] = ['\0'; COLUMN_EMAIL_SIZE];
-            for (i, c) in chunks[2].chars().take(COLUMN_USERNAME_SIZE).enumerate() {
+            for (i, c) in username_chunks.chars().take(COLUMN_USERNAME_SIZE).enumerate() {
                 username[i] = c;
             }
-            for (i, c) in chunks[3].chars().take(COLUMN_EMAIL_SIZE).enumerate() {
+            for (i, c) in email_chunks.chars().take(COLUMN_EMAIL_SIZE).enumerate() {
                 email[i] = c;
             }
             row_to_insert = Row{id,username,email};
@@ -54,10 +59,11 @@ impl Statement{
 
         }
 
-        Statement{
+       Ok( Statement{
             statement_type,
             row_to_insert,
         }
+       )
 
     }
 }

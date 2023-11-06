@@ -51,6 +51,16 @@ fn max_string_length_insert(){
     table.free_table()
 
 }
+
+#[test]
+fn test_too_long_string(){
+    let   mut table: Table = Table::new_table();
+    let mut result = Vec::new();
+    let username:String = ['a'; COLUMN_USERNAME_SIZE+1].iter().collect();
+    let email:String = ['b'; 10].iter().collect();
+    rustql::run(format!("insert 1 {} {}",username,email), &mut table,&mut result);
+    assert_eq!(result, b"String is too long.\n");
+}
 fn repeat_character(character: &str, count: usize) -> String {
     let mut result = String::new();
     for _ in 0..count {

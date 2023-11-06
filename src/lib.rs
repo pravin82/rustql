@@ -38,34 +38,47 @@ fn execute_meta_command(command: &str){
 }
 
 unsafe fn execute_statement(command:&str, table:&mut Table,mut writer: impl Write){
-    let statement = Statement::prepare_statement(command);
-    match statement.statement_type {
-        StatementType::INSERT =>{
-            let insert_resp_result =  execute_insert(statement,table);
-            let insert_resp = match insert_resp_result {
-                Ok(resp) => resp,
-                Err(e) => e.to_string()
-            };
-            if insert_resp == "EXECUTE_SUCCESS" {
-                writeln!(writer,"Executed.");
-            }
-            else {
-                writeln!(writer, "{}", insert_resp);
+    let statement_result = Statement::prepare_statement(command);
+     match statement_result {
+         Ok(statement) => {
+             match statement.statement_type {
+                 StatementType::INSERT =>{
+                     let insert_resp_result =  execute_insert(statement,table);
+                     let insert_resp = match insert_resp_result {
+                         Ok(resp) => resp,
+                         Err(e) => e.to_string()
+                     };
+                     if insert_resp == "EXECUTE_SUCCESS" {
+                         writeln!(writer,"Executed.");
+                     }
+                     else {
+                         writeln!(writer, "{}", insert_resp);
 
-            }
-        }
-        StatementType::UPDATE => {
-           let _result =  writeln!(writer,"Update statement will be exeucted");
-            
-        }
-        StatementType::SELECT => {
-            execute_select(table,writer);
-            
+                     }
+                 }
+                 StatementType::UPDATE => {
+                     let _result =  writeln!(writer,"Update statement will be executed");
 
-        }
-    }
+                 }
+                 StatementType::SELECT => {
+                     execute_select(table,writer);
+
+
+                 }
+             }
+         }
+         Err(error) => {
+             // Handle the error and print a message
+             writeln!(writer, "{}", error.to_string());
+         }
+
+     }
 
 }
+
+
+
+
 
 
 
