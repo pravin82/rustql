@@ -59,7 +59,21 @@ fn test_too_long_string(){
     let username:String = ['a'; COLUMN_USERNAME_SIZE+1].iter().collect();
     let email:String = ['b'; 10].iter().collect();
     rustql::run(format!("insert 1 {} {}",username,email), &mut table,&mut result);
+    table.free_table();
     assert_eq!(result, b"String is too long.\n");
+}
+
+#[test]
+fn id_must_be_positive(){
+    let mut table: Table = Table::new_table();
+    let mut result = Vec::new();
+    rustql::run("insert -1 pravin email".to_string(), &mut table,&mut result);
+    assert_eq!(result, b"Id must be positive.\n");
+    result = Vec::new();
+    rustql::run("select".to_string(), &mut table,&mut result);
+    assert_eq!(result, b"");
+    table.free_table();
+
 }
 fn repeat_character(character: &str, count: usize) -> String {
     let mut result = String::new();

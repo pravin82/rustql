@@ -44,7 +44,9 @@ impl Statement{
             if(username_chunks.len()> COLUMN_USERNAME_SIZE || email_chunks.len() > COLUMN_EMAIL_SIZE){
                   return Err(Error::new(ErrorKind::Other,"String is too long."));
             }
-            let id = id_str.parse().unwrap();
+            let parsed_id:i32 = id_str.parse().unwrap();
+            if(parsed_id < 0){ return Err(Error::new(ErrorKind::Other,"Id must be positive."));}
+            let id = parsed_id as u32;
             let mut username: [char; COLUMN_USERNAME_SIZE] = ['\0'; COLUMN_USERNAME_SIZE];
             let mut email: [char;COLUMN_EMAIL_SIZE] = ['\0'; COLUMN_EMAIL_SIZE];
             for (i, c) in username_chunks.chars().take(COLUMN_USERNAME_SIZE).enumerate() {
