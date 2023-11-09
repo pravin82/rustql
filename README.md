@@ -1,2 +1,2 @@
 # rustql
-A simple database in rust by following this tutorial https://cstack.github.io/db_tutorial/
+A simple database in rust  inspired by this implemenation in c https://cstack.github.io/db_tutorial/
