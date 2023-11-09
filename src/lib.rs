@@ -15,7 +15,10 @@ pub fn run(command:String, table: &mut Table,writer: impl Write){
     let command = command.trim();
     if command.is_empty() {return}
     if command.starts_with('.') {
-        execute_meta_command(command)  ;
+        unsafe {
+            execute_meta_command(command,table)  ;
+        }
+
     }
     else {
         unsafe {
@@ -27,14 +30,19 @@ pub fn run(command:String, table: &mut Table,writer: impl Write){
 
 
 
-fn execute_meta_command(command: &str){
+unsafe fn execute_meta_command(command: &str, table:&mut Table){
     if command == ".exit" {
+        exit_process(table);
         exit(0)
     }
     else {
         println!("Unrecognised command '{}'", command)
     }
 
+}
+
+pub unsafe fn exit_process( table: &mut Table){
+    table.db_close();
 }
 
 unsafe fn execute_statement(command:&str, table:&mut Table,mut writer: impl Write){

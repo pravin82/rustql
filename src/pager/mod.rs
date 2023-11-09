@@ -1,1 +1,1 @@
-mod pager;
+pub mod pager;
