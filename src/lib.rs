@@ -1,12 +1,15 @@
+mod cursor;
 mod pager;
 mod statement;
 pub mod table;
 
+use crate::cursor::cursor::Cursor;
 use crate::statement::{Statement, StatementType};
 use crate::table::row::{Row, ROW_SIZE};
 use crate::table::table::{Table, TABLE_MAX_ROWS};
 use std::io::{Error, ErrorKind, Write};
 use std::ops::Deref;
+
 use std::process::exit;
 use std::ptr;
 
@@ -64,24 +67,26 @@ unsafe fn execute_statement(command: &str, table: &mut Table, mut writer: impl W
 
 unsafe fn execute_insert(statement: Statement, table: &mut Table) -> Result<String, Error> {
     let row = statement.row_to_insert;
+    let mut cursor = Cursor::table_end(table);
     if table.num_rows >= TABLE_MAX_ROWS {
         return Err(Error::new(ErrorKind::Other, "Table is full"));
     }
-    let row_slot = table.row_slot(table.num_rows);
-    row.serialize_row(row_slot);
+    row.serialize_row(cursor.cursor_value(table));
     table.num_rows += 1;
     Ok("EXECUTE_SUCCESS".parse().unwrap())
 }
 
 unsafe fn execute_select(table: &mut Table, mut writer: impl Write) -> Result<&'static str, Error> {
-    for i in 0..table.num_rows {
-        let row_ptr = table.row_slot(i);
+    let mut cursor = Cursor::table_start(table);
+    while (!cursor.end_of_table) {
+        let row_ptr = cursor.cursor_value(table);
         let mut bytes: [u8; ROW_SIZE] = [0u8; ROW_SIZE];
         for i in 0..ROW_SIZE {
             bytes[i] = ptr::read(row_ptr.add(i));
         }
         let deserialized_row = Row::deserialize_row(&bytes);
         let _result = Row::print_row(deserialized_row, &mut writer);
+        cursor.advance_cursor(table)
     }
     Ok("SUCCESS")
 }

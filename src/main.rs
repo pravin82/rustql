@@ -18,8 +18,9 @@ fn main() {
         if (command.trim() == ".exit") {
             unsafe { exit_process(table) }
             break;
+        } else {
+            rustql::run(command, &mut table, &mut io::stdout());
         }
-        rustql::run(command, &mut table, &mut io::stdout());
     }
 }
 
