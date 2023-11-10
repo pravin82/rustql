@@ -25,12 +25,10 @@ pub fn run(command: String, table: &mut Table, writer: impl Write) {
 }
 
 unsafe fn execute_meta_command(command: &str) {
-
-        println!("Unrecognised command '{}'", command)
-
+    println!("Unrecognised command '{}'", command)
 }
 
-pub unsafe fn exit_process( table:  Table) {
+pub unsafe fn exit_process(table: Table) {
     table.db_close();
 }
 

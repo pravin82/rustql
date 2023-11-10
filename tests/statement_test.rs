@@ -105,7 +105,7 @@ fn test_table_full() {
         }
         result = Vec::new()
     }
-   close_test(table)
+    close_test(table)
 }
 
 #[test]

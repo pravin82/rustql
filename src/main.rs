@@ -1,7 +1,7 @@
-use std::io::Write;
-use std::{env, io};
 use rustql::exit_process;
 use rustql::table::table::Table;
+use std::io::Write;
+use std::{env, io};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -15,15 +15,13 @@ fn main() {
         print_prompt();
         let mut command = String::new();
         io::stdin().read_line(&mut command).unwrap();
-        if(command.trim() == ".exit"){
+        if (command.trim() == ".exit") {
             unsafe { exit_process(table) }
             break;
         }
         rustql::run(command, &mut table, &mut io::stdout());
     }
 }
-
-
 
 fn print_prompt() {
     print!("db > ");
