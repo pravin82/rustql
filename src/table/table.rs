@@ -9,7 +9,7 @@ pub const TABLE_MAX_ROWS: u32 = ROWS_PER_PAGE * TABLE_MAX_PAGES;
 
 pub struct Table {
     pub num_rows: u32,
-    pager: Pager,
+   pub pager: Pager,
 }
 
 impl Table {
@@ -19,7 +19,9 @@ impl Table {
         Table { num_rows, pager }
     }
 
-    pub unsafe fn db_close(&mut self) {
+
+
+    pub unsafe fn db_close(mut self) {
         self.flush_pages();
         self.free_pages();
         drop(&self.pager);

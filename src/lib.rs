@@ -6,6 +6,7 @@ use crate::statement::{Statement, StatementType};
 use crate::table::row::{Row, ROW_SIZE};
 use crate::table::table::{Table, TABLE_MAX_ROWS};
 use std::io::{Error, ErrorKind, Write};
+use std::ops::Deref;
 use std::process::exit;
 use std::ptr;
 
@@ -16,23 +17,20 @@ pub fn run(command: String, table: &mut Table, writer: impl Write) {
     }
     if command.starts_with('.') {
         unsafe {
-            execute_meta_command(command, table);
+            execute_meta_command(command);
         }
     } else {
         unsafe { execute_statement(command, table, writer) }
     }
 }
 
-unsafe fn execute_meta_command(command: &str, table: &mut Table) {
-    if command == ".exit" {
-        exit_process(table);
-        exit(0)
-    } else {
+unsafe fn execute_meta_command(command: &str) {
+
         println!("Unrecognised command '{}'", command)
-    }
+
 }
 
-pub unsafe fn exit_process(table: &mut Table) {
+pub unsafe fn exit_process( table:  Table) {
     table.db_close();
 }
 
