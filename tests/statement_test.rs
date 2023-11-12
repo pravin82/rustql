@@ -20,7 +20,7 @@ fn start_test() {
 #[test]
 fn it_insert_and_select() {
     start_test();
-    let mut table: Table = Table::db_open(DB_FILE_NAME);
+    let mut table: Table = unsafe { Table::db_open(DB_FILE_NAME) };
     let mut result = Vec::new();
     rustql::run("insert 1 pravin email".to_string(), &mut table, &mut result);
     assert_eq!(result, b"Executed.\n");
@@ -33,7 +33,7 @@ fn it_insert_and_select() {
     unsafe {
         rustql::exit_process(table);
     }
-    let mut table: Table = Table::db_open(DB_FILE_NAME);
+    let mut table: Table = unsafe { Table::db_open(DB_FILE_NAME) };
     result = Vec::new();
     rustql::run("select".to_string(), &mut table, &mut result);
     assert_eq!(
@@ -45,7 +45,7 @@ fn it_insert_and_select() {
 #[test]
 fn insert_more_than_1_page() {
     start_test();
-    let mut table: Table = Table::db_open(DB_FILE_NAME);
+    let mut table: Table = unsafe { Table::db_open(DB_FILE_NAME) };
     let mut result = Vec::new();
     for i in 1..=ROWS_PER_PAGE + 1 {
         rustql::run(
@@ -62,7 +62,7 @@ fn insert_more_than_1_page() {
         rustql::exit_process(table);
     }
     result = Vec::new();
-    let mut table: Table = Table::db_open(DB_FILE_NAME);
+    let mut table: Table = unsafe { Table::db_open(DB_FILE_NAME) };
     rustql::run("select".to_string(), &mut table, &mut result);
     assert_eq!(result, get_expected_result(ROWS_PER_PAGE + 1).as_bytes());
     close_test(table)
@@ -89,7 +89,7 @@ fn get_expected_result(count: u32) -> String {
 #[test]
 fn test_table_full() {
     start_test();
-    let mut table: Table = Table::db_open(DB_FILE_NAME);
+    let mut table: Table = unsafe { Table::db_open(DB_FILE_NAME) };
     let mut result = Vec::new();
 
     for i in 0..TABLE_MAX_ROWS + 1 {
@@ -111,7 +111,7 @@ fn test_table_full() {
 #[test]
 fn max_string_length_insert() {
     start_test();
-    let mut table: Table = Table::db_open(DB_FILE_NAME);
+    let mut table: Table = unsafe { Table::db_open(DB_FILE_NAME) };
     let mut result = Vec::new();
     let username: String = ['a'; COLUMN_USERNAME_SIZE].iter().collect();
     let email: String = ['b'; COLUMN_EMAIL_SIZE].iter().collect();
@@ -133,7 +133,7 @@ fn max_string_length_insert() {
 #[test]
 fn test_too_long_string() {
     start_test();
-    let mut table: Table = Table::db_open(DB_FILE_NAME);
+    let mut table: Table = unsafe { Table::db_open(DB_FILE_NAME) };
     let mut result = Vec::new();
     let username: String = ['a'; COLUMN_USERNAME_SIZE + 1].iter().collect();
     let email: String = ['b'; 10].iter().collect();
@@ -149,7 +149,7 @@ fn test_too_long_string() {
 #[test]
 fn id_must_be_positive() {
     start_test();
-    let mut table: Table = Table::db_open(DB_FILE_NAME);
+    let mut table: Table = unsafe { Table::db_open(DB_FILE_NAME) };
     let mut result = Vec::new();
     rustql::run(
         "insert -1 pravin email".to_string(),
@@ -163,6 +163,7 @@ fn id_must_be_positive() {
     close_test(table)
 }
 
+
 fn repeat_character(character: &str, count: usize) -> String {
     let mut result = String::new();
     for _ in 0..count {
@@ -175,4 +176,54 @@ fn repeat_character(character: &str, count: usize) -> String {
     result.pop();
     result.pop(); // Remove the trailing comma
     result
+}
+
+#[test]
+fn print_btree_node(){
+    start_test();
+    let mut table: Table = unsafe { Table::db_open(DB_FILE_NAME) };
+    let mut result = Vec::new();
+    let ids = vec![3, 1, 2];
+
+    for id in ids{
+        rustql::run(
+            format!("insert {} pravin{} email{}", id, id, id),
+            &mut table,
+            &mut result,
+        );
+        assert_eq!(result, b"Executed.\n");
+        result = Vec::new()
+    }
+    result = Vec::new();
+    rustql::run(
+        format!(".btree"),
+        &mut table,
+        &mut result,
+    );
+    assert_eq!(result, b"Tree:\nleaf (size 3)\n  - 0 : 1\n  - 1 : 2\n  - 2 : 3\n");
+    close_test(table)
+
+}
+
+#[test]
+fn test_duplicate_keys(){
+    start_test();
+    let mut table: Table = unsafe { Table::db_open(DB_FILE_NAME) };
+    let mut result = Vec::new();
+    rustql::run(
+        format!("insert 1 pravin1 email1"),
+        &mut table,
+        &mut result,
+    );
+    assert_eq!(result, b"Executed.\n");
+    result = Vec::new();
+    rustql::run(
+        format!("insert 1 pravin2 email2"),
+        &mut table,
+        &mut result,
+    );
+    assert_eq!(result,b"Error:Duplicate key\n")
+
+
+
 }

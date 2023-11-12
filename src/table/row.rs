@@ -2,7 +2,7 @@ use std::io::Write;
 use std::ptr;
 
 pub const COLUMN_USERNAME_SIZE: usize = 32;
-pub const COLUMN_EMAIL_SIZE: usize = 255;
+pub const COLUMN_EMAIL_SIZE: usize = 35;
 
 macro_rules! field_size {
     ($t:ident :: $field:ident) => {{

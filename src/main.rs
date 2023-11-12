@@ -10,7 +10,7 @@ fn main() {
         return;
     }
     let file_name = &args[1];
-    let mut table = Table::db_open(file_name);
+    let mut table = unsafe { Table::db_open(file_name) };
     loop {
         print_prompt();
         let mut command = String::new();

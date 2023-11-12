@@ -2,6 +2,7 @@ mod cursor;
 mod pager;
 mod statement;
 pub mod table;
+mod node;
 
 use crate::cursor::cursor::Cursor;
 use crate::statement::{Statement, StatementType};
@@ -12,6 +13,8 @@ use std::ops::Deref;
 
 use std::process::exit;
 use std::ptr;
+use crate::node::get_leaf_node_num_cells;
+use crate::node::node::{find_key_in_leaf_node, leaf_node_insert, print_leaf_node};
 
 pub fn run(command: String, table: &mut Table, writer: impl Write) {
     let command = command.trim();
@@ -20,15 +23,23 @@ pub fn run(command: String, table: &mut Table, writer: impl Write) {
     }
     if command.starts_with('.') {
         unsafe {
-            execute_meta_command(command);
+            execute_meta_command(command,table,writer);
         }
     } else {
         unsafe { execute_statement(command, table, writer) }
     }
 }
 
-unsafe fn execute_meta_command(command: &str) {
-    println!("Unrecognised command '{}'", command)
+unsafe fn execute_meta_command(command: &str, table: &mut Table,mut writer: impl Write) {
+    if(command == ".btree"){
+        writeln!(writer,"Tree:");
+        print_leaf_node(table.pager.get_page(0).unwrap(),writer)
+
+    }
+    else {
+        println!("Unrecognised command '{}'", command)
+    }
+
 }
 
 pub unsafe fn exit_process(table: Table) {
@@ -67,13 +78,11 @@ unsafe fn execute_statement(command: &str, table: &mut Table, mut writer: impl W
 
 unsafe fn execute_insert(statement: Statement, table: &mut Table) -> Result<String, Error> {
     let row = statement.row_to_insert;
-    let mut cursor = Cursor::table_end(table);
+    let  cursor = Cursor::find_key(table,row.id);
     if table.num_rows >= TABLE_MAX_ROWS {
         return Err(Error::new(ErrorKind::Other, "Table is full"));
     }
-    row.serialize_row(cursor.cursor_value(table));
-    table.num_rows += 1;
-    Ok("EXECUTE_SUCCESS".parse().unwrap())
+    leaf_node_insert(cursor,row.id,row,table)
 }
 
 unsafe fn execute_select(table: &mut Table, mut writer: impl Write) -> Result<&'static str, Error> {
