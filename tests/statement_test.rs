@@ -163,7 +163,6 @@ fn id_must_be_positive() {
     close_test(table)
 }
 
-
 fn repeat_character(character: &str, count: usize) -> String {
     let mut result = String::new();
     for _ in 0..count {
@@ -179,13 +178,13 @@ fn repeat_character(character: &str, count: usize) -> String {
 }
 
 #[test]
-fn print_btree_node(){
+fn print_btree_node() {
     start_test();
     let mut table: Table = unsafe { Table::db_open(DB_FILE_NAME) };
     let mut result = Vec::new();
     let ids = vec![3, 1, 2];
 
-    for id in ids{
+    for id in ids {
         rustql::run(
             format!("insert {} pravin{} email{}", id, id, id),
             &mut table,
@@ -195,35 +194,22 @@ fn print_btree_node(){
         result = Vec::new()
     }
     result = Vec::new();
-    rustql::run(
-        format!(".btree"),
-        &mut table,
-        &mut result,
+    rustql::run(format!(".btree"), &mut table, &mut result);
+    assert_eq!(
+        result,
+        b"Tree:\nleaf (size 3)\n  - 0 : 1\n  - 1 : 2\n  - 2 : 3\n"
     );
-    assert_eq!(result, b"Tree:\nleaf (size 3)\n  - 0 : 1\n  - 1 : 2\n  - 2 : 3\n");
     close_test(table)
-
 }
 
 #[test]
-fn test_duplicate_keys(){
+fn test_duplicate_keys() {
     start_test();
     let mut table: Table = unsafe { Table::db_open(DB_FILE_NAME) };
     let mut result = Vec::new();
-    rustql::run(
-        format!("insert 1 pravin1 email1"),
-        &mut table,
-        &mut result,
-    );
+    rustql::run(format!("insert 1 pravin1 email1"), &mut table, &mut result);
     assert_eq!(result, b"Executed.\n");
     result = Vec::new();
-    rustql::run(
-        format!("insert 1 pravin2 email2"),
-        &mut table,
-        &mut result,
-    );
-    assert_eq!(result,b"Error:Duplicate key\n")
-
-
-
+    rustql::run(format!("insert 1 pravin2 email2"), &mut table, &mut result);
+    assert_eq!(result, b"Error:Duplicate key\n")
 }

@@ -12,7 +12,7 @@ pub struct Pager {
     pub file: File,
     pub file_length: u32,
     pub pages: [Option<*mut u8>; TABLE_MAX_PAGES as usize],
-    pub num_pages:u32
+    pub num_pages: u32,
 }
 
 impl Pager {
@@ -22,16 +22,19 @@ impl Pager {
         let file = options.open(filename)?;
         let metadata = file.metadata()?;
         let file_length = metadata.len() as u32;
-        let num_pages = file_length/PAGE_SIZE as u32;
+        let num_pages = file_length / PAGE_SIZE as u32;
         let pages = [None; TABLE_MAX_PAGES as usize];
-        if(file_length % PAGE_SIZE as u32 != 0){
-            return  Err(Error::new(ErrorKind::Other, "Db file is not whole no of page size"));
+        if (file_length % PAGE_SIZE as u32 != 0) {
+            return Err(Error::new(
+                ErrorKind::Other,
+                "Db file is not whole no of page size",
+            ));
         }
         Ok(Pager {
             file,
             file_length,
             pages,
-            num_pages
+            num_pages,
         })
     }
 
@@ -63,8 +66,8 @@ impl Pager {
             page_ptr = Some(buffer.as_mut_ptr());
             mem::forget(buffer);
             self.pages[page_num as usize] = page_ptr;
-            if(page_num >= self.num_pages){
-                self.num_pages = page_num+1
+            if (page_num >= self.num_pages) {
+                self.num_pages = page_num + 1
             }
         }
         Ok(page_ptr.unwrap())

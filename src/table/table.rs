@@ -1,8 +1,8 @@
+use crate::node::node::initialize_leaf_node;
 use crate::pager::pager::{Pager, TABLE_MAX_PAGES};
 use crate::table::row::ROW_SIZE;
 use libm::ceil;
 use std::mem;
-use crate::node::node::initialize_leaf_node;
 
 pub const PAGE_SIZE: usize = 4096;
 
@@ -12,20 +12,23 @@ pub const TABLE_MAX_ROWS: u32 = ROWS_PER_PAGE * TABLE_MAX_PAGES;
 pub struct Table {
     pub num_rows: u32,
     pub pager: Pager,
-    pub root_page_num:u32
+    pub root_page_num: u32,
 }
 
 impl Table {
     pub unsafe fn db_open(filename: &str) -> Table {
         let mut pager = Pager::open(filename).unwrap();
         let num_rows = (pager.file_length) / ROW_SIZE as u32;
-        if(pager.num_pages == 0){
+        if (pager.num_pages == 0) {
             // New database file. Initialize page 0 as leaf node.
             let root_node = pager.get_page(0).unwrap();
             initialize_leaf_node(root_node)
         }
-        Table { num_rows, pager,root_page_num:0 }
-
+        Table {
+            num_rows,
+            pager,
+            root_page_num: 0,
+        }
     }
 
     pub unsafe fn db_close(mut self) {
