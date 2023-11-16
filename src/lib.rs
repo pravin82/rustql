@@ -11,8 +11,8 @@ use crate::table::table::{Table, TABLE_MAX_ROWS};
 use std::io::{Error, ErrorKind, Write};
 use std::ops::Deref;
 
-use crate::node::node::{find_key_in_leaf_node, leaf_node_insert, print_leaf_node};
 use std::ptr;
+use crate::node::node::Node;
 
 pub fn run(command: String, table: &mut Table, writer: impl Write) {
     let command = command.trim();
@@ -31,7 +31,7 @@ pub fn run(command: String, table: &mut Table, writer: impl Write) {
 unsafe fn execute_meta_command(command: &str, table: &mut Table, mut writer: impl Write) {
     if (command == ".btree") {
         writeln!(writer, "Tree:");
-        print_leaf_node(table.pager.get_page(0).unwrap(), writer)
+        Node::print_leaf_node(table.pager.get_page(0).unwrap(), writer)
     } else {
         println!("Unrecognised command '{}'", command)
     }
@@ -77,7 +77,7 @@ unsafe fn execute_insert(statement: Statement, table: &mut Table) -> Result<Stri
         return Err(Error::new(ErrorKind::Other, "Table is full"));
     }
     let cursor = Cursor::find_key(table, row.id);
-    leaf_node_insert(cursor, row.id, row)
+    Node::leaf_node_insert(cursor, row.id, row)
 }
 
 unsafe fn execute_select(table: &mut Table, mut writer: impl Write) -> Result<&'static str, Error> {

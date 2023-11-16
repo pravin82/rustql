@@ -1,6 +1,5 @@
 
-use crate::node::node::{find_key_in_leaf_node, get_node_type, NodeType};
-use crate::node::{get_leaf_node_num_cells, get_leaf_node_value_ptr};
+use crate::node::node::{Node, NodeType};
 use crate::table::row::ROW_SIZE;
 use crate::table::table::{Table, ROWS_PER_PAGE};
 
@@ -14,7 +13,7 @@ pub struct Cursor<'a> {
 impl<'a> Cursor<'a> {
     pub unsafe fn table_start(table: &mut Table) -> Cursor {
         let root_node_result = table.pager.get_page(table.root_page_num);
-        let num_cells = get_leaf_node_num_cells(root_node_result.unwrap());
+        let num_cells = Node::get_leaf_node_num_cells(root_node_result.unwrap());
         Cursor {
             page_num: table.root_page_num,
             cell_num: 0,
@@ -28,9 +27,9 @@ impl<'a> Cursor<'a> {
     pub unsafe fn find_key(table: &'a mut Table, key: u32) -> Cursor<'a> {
         let root_page_num = table.root_page_num;
         let root_node = table.pager.get_page(root_page_num).unwrap();
-        let node_type = get_node_type(root_node);
+        let node_type = Node::get_node_type(root_node);
         if (node_type == NodeType::LEAF) {
-            return find_key_in_leaf_node(table, root_page_num, key);
+            return Node::find_key_in_leaf_node(table, root_page_num, key);
         } else {
             panic!("Not implemented searching in internal node")
         }
@@ -40,14 +39,14 @@ impl<'a> Cursor<'a> {
         let cell_num = self.cell_num;
         let page_num = self.page_num;
         let page_ptr = self.table.pager.get_page(page_num).unwrap();
-        let value_ptr = get_leaf_node_value_ptr(page_ptr, cell_num);
+        let value_ptr = Node::get_leaf_node_value_ptr(page_ptr, cell_num);
         value_ptr
     }
 
     pub unsafe fn advance_cursor(&mut self) {
         let page_num = self.page_num;
         let node_ptr = self.table.pager.get_page(page_num).unwrap();
-        let num_cells = get_leaf_node_num_cells(node_ptr);
+        let num_cells = Node::get_leaf_node_num_cells(node_ptr);
         self.cell_num += 1;
         if (self.cell_num >= num_cells) {
             self.end_of_table = true
