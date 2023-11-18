@@ -184,7 +184,7 @@ fn print_tree() {
     let mut result = Vec::new();
     let ids = vec![3, 1, 2];
 
-    for id in 1..=15 {
+    for id in 1..=16 {
         rustql::run(
             format!("insert {} pravin{} email{}", id, id, id),
             &mut table,
@@ -197,8 +197,16 @@ fn print_tree() {
     rustql::run(format!(".btree"), &mut table, &mut result);
     assert_eq!(
         result,
-        b"Tree:\n- internal (size 1)\n  - leaf (size 8)\n    - 1\n    - 2\n    - 3\n    - 4\n    - 5\n    - 6\n    - 7\n    - 8\n  - key 8\n  - leaf (size 7)\n    - 9\n    - 10\n    - 11\n    - 12\n    - 13\n    - 14\n    - 15\n"
+        b"Tree:\n- internal (size 1)\n  - leaf (size 8)\n    - 1\n    - 2\n    - 3\n    - 4\n    - 5\n    - 6\n    - 7\n    - 8\n  - key 8\n  - leaf (size 8)\n    - 9\n    - 10\n    - 11\n    - 12\n    - 13\n    - 14\n    - 15\n    - 16\n"
     );
+    result = Vec::new();
+    rustql::run(
+        format!("insert {} pravin{} email{}", 17, 17, 17),
+        &mut table,
+        &mut result,
+    );
+    assert_eq!(result, b"Executed.\n");
+
     close_test(table)
 }
 

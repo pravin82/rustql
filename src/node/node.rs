@@ -159,6 +159,35 @@ impl Node {
         return cursor;
     }
 
+    pub(crate) unsafe fn find_key_in_internal_node<'a>(
+        table: &'a mut Table,
+        page_num: u32,
+        key: u32,
+    ) -> Cursor<'a> {
+        let node_ptr = table.pager.get_page(page_num).unwrap();
+        let num_keys = get_internal_node_num_keys(node_ptr);
+        let mut min_index = 0;
+        let mut max_index = num_keys;
+        while (min_index != max_index) {
+            let index = (max_index + min_index) / 2;
+            let key_at_index = get_internal_node_key(node_ptr, index);
+            if (key > key_at_index) {
+                min_index = index + 1
+            } else {
+                max_index = index
+            }
+        }
+        let child_node_page_num = get_internal_node_child_page_num(node_ptr, min_index);
+        let child_ptr = table.pager.get_page(child_node_page_num).unwrap();
+        let child_type = Node::get_node_type(child_ptr);
+        let cursor = match child_type {
+            NodeType::INTERNAL => Node::find_key_in_internal_node(table, child_node_page_num, key),
+            NodeType::LEAF => Node::find_key_in_leaf_node(table, child_node_page_num, key),
+        };
+
+        cursor
+    }
+
     pub unsafe fn print_leaf_node(node_ptr: *const u8, mut writer: impl Write) {
         let num_cells = Node::get_leaf_node_num_cells(node_ptr);
         writeln!(writer, "leaf (size {})", num_cells);
@@ -190,7 +219,7 @@ impl Node {
                 Node::indent(indentation_level, writer);
                 writeln!(writer, "- internal (size {})", num_keys);
                 for i in 0..num_keys {
-                    let child_num = get_internal_node_child(node_ptr, i);
+                    let child_num = get_internal_node_child_page_num(node_ptr, i);
                     Node::print_tree(pager, child_num, indentation_level + 1, writer);
                     Node::indent(indentation_level + 1, writer);
                     writeln!(writer, "- key {}", get_internal_node_key(node_ptr, i));
@@ -359,7 +388,7 @@ unsafe fn get_internal_node_key(node_ptr: *mut u8, cell_num: u32) -> u32 {
     u32::from_be_bytes(bytes)
 }
 
-unsafe fn get_internal_node_child(node_ptr: *mut u8, child_num: u32) -> u32 {
+unsafe fn get_internal_node_child_page_num(node_ptr: *mut u8, child_num: u32) -> u32 {
     let num_keys = get_internal_node_num_keys(node_ptr);
     if (child_num > num_keys) {
         panic!("Child number passed is greater than num of keys in node");

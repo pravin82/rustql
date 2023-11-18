@@ -27,12 +27,10 @@ impl<'a> Cursor<'a> {
         let root_page_num = table.root_page_num;
         let root_node = table.pager.get_page(root_page_num).unwrap();
         let node_type = Node::get_node_type(root_node);
-        if (node_type == NodeType::LEAF) {
-            return Node::find_key_in_leaf_node(table, root_page_num, key);
-        } else {
-            panic!("Not implemented searching in internal node")
-            // println!("Not implemented searching in internal node")
-        }
+        return match node_type {
+            NodeType::LEAF => Node::find_key_in_leaf_node(table, root_page_num, key),
+            NodeType::INTERNAL => Node::find_key_in_internal_node(table, root_page_num, key),
+        };
     }
 
     pub unsafe fn cursor_value(&mut self) -> *mut u8 {
