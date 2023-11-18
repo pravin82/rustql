@@ -11,12 +11,11 @@ pub struct Cursor<'a> {
 
 impl<'a> Cursor<'a> {
     pub unsafe fn table_start(table: &mut Table) -> Cursor {
-        let root_node_result = table.pager.get_page(table.root_page_num);
-        let num_cells = Node::get_leaf_node_num_cells(root_node_result.unwrap());
+        let cursor = Cursor::find_key(table, 0);
         Cursor {
-            page_num: table.root_page_num,
-            cell_num: 0,
-            end_of_table: (num_cells == 0),
+            page_num: cursor.page_num,
+            cell_num: cursor.cell_num,
+            end_of_table: cursor.end_of_table,
             table,
         }
     }
@@ -47,7 +46,14 @@ impl<'a> Cursor<'a> {
         let num_cells = Node::get_leaf_node_num_cells(node_ptr);
         self.cell_num += 1;
         if (self.cell_num >= num_cells) {
-            self.end_of_table = true
+            let sibling_page_num = Node::get_leaf_node_next_leaf(node_ptr);
+            let is_last_leaf = sibling_page_num == 0;
+            if is_last_leaf {
+                self.end_of_table = true;
+            } else {
+                self.page_num = sibling_page_num;
+                self.cell_num = 0;
+            }
         }
     }
 }

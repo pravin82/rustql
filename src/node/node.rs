@@ -19,7 +19,10 @@ const COMMON_NODE_HEADER_SIZE: u32 = (NODE_TYPE_SIZE + IS_ROOT_SIZE + PARENT_POI
 
 const LEAF_NODE_NUM_CELLS_SIZE: u32 = size_of::<u32>() as u32;
 const LEAF_NODE_NUM_CELLS_OFFSET: u32 = COMMON_NODE_HEADER_SIZE as u32;
-const LEAF_NODE_HEADER_SIZE: u32 = COMMON_NODE_HEADER_SIZE as u32 + LEAF_NODE_NUM_CELLS_SIZE;
+const LEAF_NODE_NEXT_LEAF_SIZE: u32 = size_of::<u32>() as u32;
+const LEAF_NODE_NEXT_LEAF_OFFSET: u32 = LEAF_NODE_NUM_CELLS_OFFSET + LEAF_NODE_NUM_CELLS_SIZE;
+const LEAF_NODE_HEADER_SIZE: u32 =
+    COMMON_NODE_HEADER_SIZE as u32 + LEAF_NODE_NUM_CELLS_SIZE + LEAF_NODE_NEXT_LEAF_SIZE;
 
 //Leaf node body
 
@@ -80,6 +83,15 @@ impl Node {
         u32::from_be_bytes(bytes)
     }
 
+    pub unsafe fn get_leaf_node_next_leaf(node_ptr: *const u8) -> u32 {
+        let next_leaf_ptr = leaf_node_next_leaf_ptr(node_ptr);
+        let mut bytes = [0; 4];
+        for i in 0..4 {
+            bytes[i] = ptr::read(next_leaf_ptr.add(i))
+        }
+        u32::from_be_bytes(bytes)
+    }
+
     pub unsafe fn get_leaf_node_value_ptr(node_ptr: *const u8, cell_num: u32) -> *mut u8 {
         get_leaf_node_cell_ptr(node_ptr, cell_num).add(LEAF_NODE_KEY_SIZE as usize)
     }
@@ -87,7 +99,8 @@ impl Node {
     pub unsafe fn initialize_leaf_node(node_ptr: *mut u8) {
         Node::set_node_type(node_ptr, NodeType::LEAF);
         Node::set_node_root(node_ptr, false);
-        set_leaf_node_num_cells(node_ptr, 0)
+        set_leaf_node_num_cells(node_ptr, 0);
+        set_leaf_node_next_leaf(node_ptr, 0) // 0 repreresents no sibling
     }
 
     pub unsafe fn initialize_internal_node(node_ptr: *mut u8) {
@@ -281,6 +294,12 @@ impl Node {
         //Set the size of nodes
         set_leaf_node_num_cells(old_node_ptr, LEAF_NODE_LEFT_SPLIT_CELL_COUNT);
         set_leaf_node_num_cells(new_node_ptr, LEAF_NODE_RIGHT_SPLIT_CELL_COUNT);
+
+        //set the sibling
+        let old_leaf_prev_sibling = Node::get_leaf_node_next_leaf(old_node_ptr);
+        set_leaf_node_next_leaf(old_node_ptr, new_page_num);
+        set_leaf_node_next_leaf(new_node_ptr, old_leaf_prev_sibling);
+
         if (is_node_root(old_node_ptr)) {
             Node::create_new_root(cursor.table, new_page_num)
         } else {
@@ -307,6 +326,10 @@ unsafe fn leaf_node_num_cells_ptr(node_ptr: *const u8) -> *const u8 {
     node_ptr.add(LEAF_NODE_NUM_CELLS_OFFSET as usize)
 }
 
+unsafe fn leaf_node_next_leaf_ptr(node_ptr: *const u8) -> *mut u8 {
+    node_ptr.add(LEAF_NODE_NEXT_LEAF_OFFSET as usize).cast_mut()
+}
+
 unsafe fn get_leaf_node_cell_ptr(node_ptr: *const u8, cell_num: u32) -> *mut u8 {
     node_ptr
         .add(LEAF_NODE_HEADER_SIZE as usize)
@@ -320,6 +343,15 @@ unsafe fn set_leaf_node_num_cells(node_ptr: *const u8, num_cells: u32) {
     for i in 0..4 {
         let id_byte = x[i];
         ptr::copy(&id_byte, leaf_node_cell_ptr.add(i), 1);
+    }
+}
+
+unsafe fn set_leaf_node_next_leaf(node_ptr: *mut u8, next_leaf_no: u32) {
+    let next_leaf_ptr = leaf_node_next_leaf_ptr(node_ptr);
+    let x = u32::to_be_bytes(next_leaf_no);
+    for i in 0..4 {
+        let id_byte = x[i];
+        ptr::copy(&id_byte, next_leaf_ptr.add(i), 1);
     }
 }
 

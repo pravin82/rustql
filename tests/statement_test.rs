@@ -71,16 +71,11 @@ fn insert_more_than_1_page() {
 fn get_expected_result(count: u32) -> String {
     let mut result = String::new();
     for i in 1..=count {
-        let name_list: Vec<char> = vec![
-            'p',
-            'r',
-            'a',
-            'v',
-            'i',
-            'n',
-            char::from_digit(i, 10).unwrap(),
-        ];
-        let email_list: Vec<char> = vec!['e', 'm', 'a', 'i', 'l', char::from_digit(i, 10).unwrap()];
+        let name = format!("pravin{}", i);
+        let email = format!("email{}", i);
+        let name_list = name.chars().collect::<Vec<char>>();
+        let email_list = email.chars().collect::<Vec<char>>();
+
         result.push_str(&format!("{},{:?},{:?}\n", i, name_list, email_list));
     }
     result
@@ -92,7 +87,7 @@ fn test_table_full() {
     let mut table: Table = unsafe { Table::db_open(DB_FILE_NAME) };
     let mut result = Vec::new();
 
-    for i in 0..TABLE_MAX_ROWS + 1 {
+    for i in 1..=TABLE_MAX_ROWS + 1 {
         rustql::run(
             format!("insert {} pravin{} email{}", i, i, i),
             &mut table,
