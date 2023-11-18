@@ -177,9 +177,9 @@ fn print_tree() {
     start_test();
     let mut table: Table = unsafe { Table::db_open(DB_FILE_NAME) };
     let mut result = Vec::new();
-    let ids = vec![3, 1, 2];
+    let ids = vec![3,1,14,2,16,13,10,5,8,6,12,7,11,9,4,15];
 
-    for id in 1..=16 {
+    for id in ids {
         rustql::run(
             format!("insert {} pravin{} email{}", id, id, id),
             &mut table,

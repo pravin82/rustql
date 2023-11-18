@@ -272,24 +272,41 @@ impl Node {
         let new_node_ptr = cursor.table.pager.get_page(new_page_num).unwrap();
         Node::initialize_leaf_node(new_node_ptr);
         //Shifting extra cells from left node to right node
-        for i in LEAF_NODE_LEFT_SPLIT_CELL_COUNT..LEAF_NODE_MAX_CELLS {
-            let cell_ptr = get_leaf_node_cell_ptr(old_node_ptr, i);
-            let destination_cell_ptr =
-                get_leaf_node_cell_ptr(new_node_ptr, i - LEAF_NODE_LEFT_SPLIT_CELL_COUNT);
-            ptr::copy(cell_ptr, destination_cell_ptr, LEAF_NODE_CELL_SIZE as usize);
-            ptr::copy(&0u8, cell_ptr, LEAF_NODE_CELL_SIZE as usize)
+
+        for i in (0..=LEAF_NODE_MAX_CELLS).rev(){
+            let dest_node_ptr = match i>=LEAF_NODE_LEFT_SPLIT_CELL_COUNT {
+                true => {new_node_ptr}
+                false => {old_node_ptr}
+
+            };
+            let cell_num = i%LEAF_NODE_LEFT_SPLIT_CELL_COUNT;
+            let destination_ptr = get_leaf_node_cell_ptr(dest_node_ptr, cell_num);
+            if(i == cursor.cell_num){
+                //Inserting new value
+                let value_ptr =
+                    Node::get_leaf_node_value_ptr(new_node_ptr, cell_num);
+                let x = u32::to_be_bytes(key);
+                for i in 0..4 {
+                    let id_byte = x[i];
+                    ptr::copy(&id_byte, destination_ptr.add(i), 1);
+                }
+                value.serialize_row(value_ptr);
+
+            }
+            else if(i > cursor.cell_num) {
+                let src_ptr = get_leaf_node_cell_ptr(old_node_ptr,i-1);
+                ptr::copy(src_ptr, destination_ptr, LEAF_NODE_CELL_SIZE as usize);
+            }
+            else {
+                let src_ptr = get_leaf_node_cell_ptr(old_node_ptr,i);
+                ptr::copy(src_ptr, destination_ptr, LEAF_NODE_CELL_SIZE as usize);
+            }
+
+
         }
-        //Inserting new node
-        let new_cell_ptr =
-            get_leaf_node_cell_ptr(new_node_ptr, LEAF_NODE_RIGHT_SPLIT_CELL_COUNT - 1);
-        let value_ptr =
-            Node::get_leaf_node_value_ptr(new_node_ptr, LEAF_NODE_RIGHT_SPLIT_CELL_COUNT - 1);
-        let x = u32::to_be_bytes(key);
-        for i in 0..4 {
-            let id_byte = x[i];
-            ptr::copy(&id_byte, new_cell_ptr.add(i), 1);
-        }
-        value.serialize_row(value_ptr);
+
+
+
 
         //Set the size of nodes
         set_leaf_node_num_cells(old_node_ptr, LEAF_NODE_LEFT_SPLIT_CELL_COUNT);
@@ -319,6 +336,10 @@ impl Node {
         let left_child_max_key = get_node_max_key(left_child_page);
         set_internal_node_cell(root_page, 0, left_child_page_num, left_child_max_key);
         set_internal_node_right_child(root_page, right_child_page_num)
+    }
+
+    unsafe fn update_internal_node_key(node_ptr: *mut u8,key:u32){
+
     }
 }
 
