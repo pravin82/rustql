@@ -1,6 +1,6 @@
 use rustql::table::row::{COLUMN_EMAIL_SIZE, COLUMN_USERNAME_SIZE};
 use rustql::table::table::{Table, ROWS_PER_PAGE, TABLE_MAX_ROWS};
-use std::fs;
+use std::{fs, io};
 const DB_FILE_NAME: &str = "mydb.db";
 fn close_test(mut table: Table) {
     unsafe {
@@ -178,13 +178,13 @@ fn repeat_character(character: &str, count: usize) -> String {
 }
 
 #[test]
-fn print_btree_node() {
+fn print_tree() {
     start_test();
     let mut table: Table = unsafe { Table::db_open(DB_FILE_NAME) };
     let mut result = Vec::new();
     let ids = vec![3, 1, 2];
 
-    for id in ids {
+    for id in 1..=15 {
         rustql::run(
             format!("insert {} pravin{} email{}", id, id, id),
             &mut table,
@@ -197,7 +197,7 @@ fn print_btree_node() {
     rustql::run(format!(".btree"), &mut table, &mut result);
     assert_eq!(
         result,
-        b"Tree:\nleaf (size 3)\n  - 0 : 1\n  - 1 : 2\n  - 2 : 3\n"
+        b"Tree:\n- internal (size 1)\n  - leaf (size 8)\n    - 1\n    - 2\n    - 3\n    - 4\n    - 5\n    - 6\n    - 7\n    - 8\n  - key 8\n  - leaf (size 7)\n    - 9\n    - 10\n    - 11\n    - 12\n    - 13\n    - 14\n    - 15\n"
     );
     close_test(table)
 }

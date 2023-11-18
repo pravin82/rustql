@@ -1,8 +1,8 @@
+use crate::node::node::Node;
 use crate::pager::pager::{Pager, TABLE_MAX_PAGES};
 use crate::table::row::ROW_SIZE;
 use libm::ceil;
 use std::mem;
-use crate::node::node::Node;
 
 pub const PAGE_SIZE: usize = 4096;
 
@@ -22,7 +22,8 @@ impl Table {
         if (pager.num_pages == 0) {
             // New database file. Initialize page 0 as leaf node.
             let root_node = pager.get_page(0).unwrap();
-            Node::initialize_leaf_node(root_node)
+            Node::initialize_leaf_node(root_node);
+            Node::set_node_root(root_node, true);
         }
         Table {
             num_rows,

@@ -1,4 +1,3 @@
-
 use crate::node::node::{Node, NodeType};
 use crate::table::row::ROW_SIZE;
 use crate::table::table::{Table, ROWS_PER_PAGE};
@@ -32,6 +31,7 @@ impl<'a> Cursor<'a> {
             return Node::find_key_in_leaf_node(table, root_page_num, key);
         } else {
             panic!("Not implemented searching in internal node")
+            // println!("Not implemented searching in internal node")
         }
     }
 

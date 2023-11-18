@@ -11,8 +11,8 @@ use crate::table::table::{Table, TABLE_MAX_ROWS};
 use std::io::{Error, ErrorKind, Write};
 use std::ops::Deref;
 
-use std::ptr;
 use crate::node::node::Node;
+use std::ptr;
 
 pub fn run(command: String, table: &mut Table, writer: impl Write) {
     let command = command.trim();
@@ -31,9 +31,9 @@ pub fn run(command: String, table: &mut Table, writer: impl Write) {
 unsafe fn execute_meta_command(command: &str, table: &mut Table, mut writer: impl Write) {
     if (command == ".btree") {
         writeln!(writer, "Tree:");
-        Node::print_leaf_node(table.pager.get_page(0).unwrap(), writer)
+        Node::print_tree(&mut table.pager, 0, 0, &mut writer)
     } else {
-        println!("Unrecognised command '{}'", command)
+        writeln!(writer, "Unrecognised command '{}'", command);
     }
 }
 

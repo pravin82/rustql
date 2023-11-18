@@ -81,4 +81,8 @@ impl Pager {
         self.file.write(&*data);
         Ok("SUCCESS".parse().unwrap())
     }
+
+    pub fn get_unused_page_num(&self) -> u32 {
+        self.num_pages
+    }
 }
