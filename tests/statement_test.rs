@@ -157,7 +157,7 @@ fn id_must_be_positive() {
     assert_eq!(result, b"Id must be positive.\n");
     result = Vec::new();
     rustql::run("select".to_string(), &mut table, &mut result);
-    assert_eq!(result, b"");
+    assert_eq!(result, b"0,[],[]\n");
     close_test(table)
 }
 
