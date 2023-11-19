@@ -1,6 +1,9 @@
+use rand::prelude::SliceRandom;
+use rand::thread_rng;
 use rustql::table::row::{COLUMN_EMAIL_SIZE, COLUMN_USERNAME_SIZE};
 use rustql::table::table::{Table, ROWS_PER_PAGE, TABLE_MAX_ROWS};
 use std::{fs, io};
+
 const DB_FILE_NAME: &str = "mydb.db";
 fn close_test(mut table: Table) {
     unsafe {
@@ -172,12 +175,19 @@ fn repeat_character(character: &str, count: usize) -> String {
     result
 }
 
+fn shuffle_list<T>(list: &mut Vec<T>) {
+    let mut rng = thread_rng();
+    list.shuffle(&mut rng);
+}
+
 #[test]
 fn print_tree() {
     start_test();
     let mut table: Table = unsafe { Table::db_open(DB_FILE_NAME) };
     let mut result = Vec::new();
-    let ids = vec![3,1,14,2,16,13,10,5,8,6,12,7,11,9,4,15];
+    let ids = vec![3, 1, 14, 2, 16, 13, 10, 5, 8, 6, 12, 7, 11, 9, 4, 15];
+    // let mut ids = (1..=16).collect();
+    //shuffle_list(&mut ids);
 
     for id in ids {
         rustql::run(
@@ -189,6 +199,7 @@ fn print_tree() {
         result = Vec::new()
     }
     result = Vec::new();
+   // rustql::run(format!(".btree"), &mut table, &mut io::stdout());
     rustql::run(format!(".btree"), &mut table, &mut result);
     assert_eq!(
         result,
