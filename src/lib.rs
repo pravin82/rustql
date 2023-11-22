@@ -7,12 +7,13 @@ pub mod table;
 use crate::cursor::cursor::Cursor;
 use crate::statement::{Statement, StatementType};
 use crate::table::row::{Row, ROW_SIZE};
-use crate::table::table::{Table, TABLE_MAX_ROWS};
+use crate::table::table::{ROWS_PER_PAGE, Table, TABLE_MAX_ROWS};
 use std::io::{Error, ErrorKind, Write};
 use std::ops::Deref;
 
 use crate::node::node::Node;
 use std::ptr;
+use crate::pager::pager::TABLE_MAX_PAGES;
 
 pub fn run(command: String, table: &mut Table, writer: impl Write) {
     let command = command.trim();
@@ -73,7 +74,8 @@ unsafe fn execute_statement(command: &str, table: &mut Table, mut writer: impl W
 
 unsafe fn execute_insert(statement: Statement, table: &mut Table) -> Result<String, Error> {
     let row = statement.row_to_insert;
-    if table.num_rows >= TABLE_MAX_ROWS {
+    let num_rows = table.num_rows;
+    if num_rows >= TABLE_MAX_ROWS {
         return Err(Error::new(ErrorKind::Other, "Table is full"));
     }
     let cursor = Cursor::find_key(table, row.id);

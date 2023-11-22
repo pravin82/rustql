@@ -4,7 +4,8 @@ use crate::table::row::{Row, ROW_SIZE};
 use crate::table::table::{Table, PAGE_SIZE};
 use std::io::{Error, ErrorKind, Write};
 use std::mem::{size_of, take};
-use std::ptr;
+use std::{io, ptr};
+use std::thread::current;
 
 //Common header
 const NODE_TYPE_SIZE: u32 = size_of::<u8>() as u32;
@@ -32,7 +33,10 @@ const LEAF_NODE_VALUE_SIZE: u32 = ROW_SIZE as u32;
 const LEAF_NODE_VALUE_OFFSET: u32 = LEAF_NODE_KEY_OFFSET + LEAF_NODE_KEY_SIZE;
 const LEAF_NODE_CELL_SIZE: u32 = LEAF_NODE_KEY_SIZE + LEAF_NODE_VALUE_SIZE;
 const LEAF_NODE_SPACE_FOR_CELLS: u32 = (PAGE_SIZE - LEAF_NODE_HEADER_SIZE as usize) as u32;
-const LEAF_NODE_MAX_CELLS: u32 = LEAF_NODE_SPACE_FOR_CELLS / LEAF_NODE_CELL_SIZE;
+const LEAF_NODE_MAX_CELLS: u32 = 2;
+//LEAF_NODE_SPACE_FOR_CELLS / LEAF_NODE_CELL_SIZE;
+
+
 const LEAF_NODE_RIGHT_SPLIT_CELL_COUNT: u32 = (LEAF_NODE_MAX_CELLS + 1) / 2;
 const LEAF_NODE_LEFT_SPLIT_CELL_COUNT: u32 =
     (LEAF_NODE_MAX_CELLS + 1) - LEAF_NODE_RIGHT_SPLIT_CELL_COUNT;
@@ -47,6 +51,7 @@ const INTERNAL_NODE_KEY_SIZE: u32 = size_of::<u32>() as u32;
 const INTERNAL_NODE_CHILD_SIZE: u32 = size_of::<u32>() as u32;
 const INTERNAL_NODE_CELL_SIZE: u32 = INTERNAL_NODE_KEY_SIZE + INTERNAL_NODE_CHILD_SIZE;
 const INTERNAL_NODE_MAX_CELLS: u32 = 3;
+const INVALID_PAGE_NUM:u32 = std::u32::MAX;
 #[derive(Debug, PartialEq)]
 pub enum NodeType {
     INTERNAL = 1,
@@ -107,7 +112,8 @@ impl Node {
     pub unsafe fn initialize_internal_node(node_ptr: *mut u8) {
         Node::set_node_type(node_ptr, NodeType::INTERNAL);
         Node::set_node_root(node_ptr, false);
-        set_internal_node_num_cells(node_ptr, 0)
+        set_internal_node_num_cells(node_ptr, 0);
+        set_internal_node_right_child(node_ptr,INVALID_PAGE_NUM);
     }
 
     pub unsafe fn leaf_node_insert(cursor: Cursor, key: u32, value: Row) -> Result<String, Error> {
@@ -138,21 +144,38 @@ impl Node {
             ptr::copy(&id_byte, cell_ptr.add(i), 1);
         }
         value.serialize_row(value_ptr);
+        cursor.table.num_rows += 1;
         Ok("EXECUTE_SUCCESS".parse().unwrap())
     }
     pub unsafe fn internal_node_insert(
         table: &mut Table,
         page_num: u32,
         child_page_num: u32,
-    ) -> u32 {
+    )  {
         let node_ptr = table.pager.get_page(page_num).unwrap();
         let child_node_ptr = table.pager.get_page(child_page_num).unwrap();
-        let child_max_key = get_node_max_key(child_node_ptr);
-        let cell_index = Node::find_key_cell_index_internal_node(node_ptr, child_max_key);
+        let child_max_key = get_node_max_key(table,child_node_ptr);
         let num_cells = get_internal_node_num_cells(node_ptr);
         if (num_cells >= INTERNAL_NODE_MAX_CELLS) {
-            panic!("Implement splitting of Internal node")
-        } else {
+            Node::internal_node_split_and_insert(table,page_num,child_page_num);
+            return;
+        }
+        let right_child = get_internal_node_right_child(node_ptr);
+        if(right_child == INVALID_PAGE_NUM){
+            set_internal_node_right_child(node_ptr,child_page_num);
+            return;
+        }
+        let right_child_ptr = table.pager.get_page(right_child).unwrap();
+        let right_child_max_key = get_node_max_key(table,right_child_ptr);
+
+
+        if(child_max_key > right_child_max_key){
+            set_internal_node_cell(node_ptr,num_cells,right_child,right_child_max_key);
+            set_internal_node_right_child(node_ptr,child_page_num);
+        }
+       else {
+           let cell_index = Node::find_key_cell_index_internal_node(node_ptr, child_max_key);
+
             for i in (cell_index..num_cells).rev() {
                 let dest_cell_ptr = get_internal_node_cell_ptr(node_ptr, i + 1);
                 let src_cell_ptr = get_internal_node_cell_ptr(node_ptr, i);
@@ -165,7 +188,65 @@ impl Node {
             set_internal_node_cell(node_ptr, cell_index, child_page_num, child_max_key);
         }
         set_internal_node_num_cells(node_ptr, num_cells + 1);
-        return cell_index;
+    }
+
+    unsafe fn internal_node_split_and_insert(table:&mut Table, page_num:u32, child_page_num:u32){
+        let mut old_page_num = page_num;
+        let mut old_node_ptr = table.pager.get_page(old_page_num).unwrap();
+        let old_max_key = get_node_max_key(table,old_node_ptr);
+        let child_node_ptr = table.pager.get_page(child_page_num).unwrap();
+        let child_max = get_node_max_key(table,child_node_ptr);
+        let new_page_num = table.pager.get_unused_page_num();
+        let new_node_ptr = table.pager.get_page(new_page_num).unwrap();
+        let splitting_root = is_node_root(old_node_ptr);
+        let mut parent_page_num ;
+        if(splitting_root){
+            Node::create_new_root(table,new_page_num);
+             parent_page_num = table.root_page_num;
+            let parent_ptr =  table.pager.get_page(parent_page_num).unwrap();
+            old_page_num = get_internal_node_child_page_num(parent_ptr,0);
+            old_node_ptr = table.pager.get_page(old_page_num).unwrap();
+        }
+        else {
+            parent_page_num = Node::get_parent_node(old_node_ptr);
+            Node::initialize_internal_node(new_node_ptr);
+        }
+        let parent_ptr =  table.pager.get_page(parent_page_num).unwrap();
+        let mut num_cells = get_internal_node_num_cells(old_node_ptr);
+        let right_child = get_internal_node_right_child(old_node_ptr);
+        let right_child_ptr = table.pager.get_page(right_child).unwrap();
+        Node::internal_node_insert(table,new_page_num,right_child);
+        Node::set_parent_node(right_child_ptr,new_page_num);
+        set_internal_node_right_child(old_node_ptr,INVALID_PAGE_NUM);
+        for i in ((INTERNAL_NODE_MAX_CELLS/2)+1..=INTERNAL_NODE_MAX_CELLS - 1).rev(){
+            let cell_child_page_num = get_internal_node_child_page_num(old_node_ptr,i);
+            let cell_child_ptr = table.pager.get_page(cell_child_page_num).unwrap();
+            Node::internal_node_insert(table,new_page_num,cell_child_page_num);
+            Node::set_parent_node(cell_child_ptr,new_page_num);
+            num_cells -= 1
+        }
+        let cell_child_page_num = get_internal_node_child_page_num(old_node_ptr,num_cells-1);
+        set_internal_node_right_child(old_node_ptr,cell_child_page_num);
+        num_cells -= 1;
+        set_internal_node_num_cells(old_node_ptr,num_cells);
+        let max_after_split = get_node_max_key(table,old_node_ptr);
+        let destination_page_num = if child_max < max_after_split {
+            old_page_num
+        } else {
+            new_page_num
+        };
+        Node::internal_node_insert(table,destination_page_num,child_page_num);
+        Node::set_parent_node(child_node_ptr,parent_page_num);
+
+      if(!splitting_root){
+          Node::update_internal_node_key(parent_ptr,old_max_key,max_after_split);
+          Node::internal_node_insert(table,parent_page_num,new_page_num);
+      }
+
+
+
+
+
     }
 
     pub unsafe fn find_key_in_leaf_node<'a>(
@@ -263,14 +344,18 @@ impl Node {
                 let num_cells = get_internal_node_num_cells(node_ptr);
                 Node::indent(indentation_level, writer);
                 writeln!(writer, "- internal (size {})", num_cells);
-                for i in 0..num_cells {
-                    let child_num = get_internal_node_child_page_num(node_ptr, i);
+                if(num_cells > 0){
+                    for i in 0..num_cells {
+                        let child_num = get_internal_node_child_page_num(node_ptr, i);
+                        Node::print_tree(pager, child_num, indentation_level + 1, writer);
+                        Node::indent(indentation_level + 1, writer);
+                        writeln!(writer, "- key {}", get_internal_node_key(node_ptr, i));
+                    }
+                    let child_num = get_internal_node_right_child(node_ptr);
                     Node::print_tree(pager, child_num, indentation_level + 1, writer);
-                    Node::indent(indentation_level + 1, writer);
-                    writeln!(writer, "- key {}", get_internal_node_key(node_ptr, i));
+
                 }
-                let child_num = get_internal_node_right_child(node_ptr);
-                Node::print_tree(pager, child_num, indentation_level + 1, writer);
+
             }
         }
     }
@@ -303,6 +388,8 @@ impl Node {
         let old_node_ptr = cursor.table.pager.get_page(old_node_page_num).unwrap();
         let new_page_num = cursor.table.pager.get_unused_page_num();
         let new_node_ptr = cursor.table.pager.get_page(new_page_num).unwrap();
+        let old_max_key = get_node_max_key(cursor.table,old_node_ptr);
+
         Node::initialize_leaf_node(new_node_ptr);
         //Shifting extra cells from left node to right node
 
@@ -344,22 +431,11 @@ impl Node {
             Node::create_new_root(cursor.table, new_page_num)
         } else {
             let parent_node = Node::get_parent_node(old_node_ptr);
-            Node::set_parent_node(new_node_ptr, parent_node);
-            let inserted_cell_index =
-                Node::internal_node_insert(cursor.table, parent_node, old_node_page_num);
             let parent_node_ptr = cursor.table.pager.get_page(parent_node).unwrap();
-            let num_cells = get_internal_node_num_cells(parent_node_ptr);
-            if (inserted_cell_index == num_cells - 1) {
-                set_internal_node_right_child(parent_node_ptr, new_page_num);
-            } else {
-                let right_node_max_key = get_node_max_key(new_node_ptr);
-                set_internal_node_cell(
-                    parent_node_ptr,
-                    inserted_cell_index + 1,
-                    new_page_num,
-                    right_node_max_key,
-                );
-            }
+            let new_max_key = get_node_max_key(cursor.table,old_node_ptr);
+            Node::update_internal_node_key(parent_node_ptr,old_max_key,new_max_key);
+            Node::set_parent_node(new_node_ptr, parent_node);
+            Node::internal_node_insert(cursor.table, parent_node, new_page_num);
         }
     }
     //current root data will be copied to left child
@@ -368,12 +444,29 @@ impl Node {
         let left_child_page_num = table.pager.get_unused_page_num();
         let left_child_page = table.pager.get_page(left_child_page_num).unwrap();
         let right_child_page = table.pager.get_page(right_child_page_num).unwrap();
+        if(Node::get_node_type(root_page) == NodeType::INTERNAL){
+            Node::initialize_internal_node(left_child_page);
+            Node::initialize_internal_node(right_child_page);
+        }
         ptr::copy(root_page, left_child_page, PAGE_SIZE);
         Node::set_node_root(left_child_page, false);
+        if(Node::get_node_type(left_child_page) == NodeType::INTERNAL){
+            let num_cells = get_internal_node_num_cells(left_child_page);
+            for i in 0..num_cells{
+                let child = get_internal_node_child_page_num(left_child_page,i);
+                let child_ptr = table.pager.get_page(child).unwrap();
+                Node::set_parent_node(child_ptr,left_child_page_num)
+            }
+            let right_child = get_internal_node_right_child(left_child_page);
+            let right_child_ptr = table.pager.get_page(right_child).unwrap();
+            Node::set_parent_node(right_child_ptr,left_child_page_num)
+
+        }
+
         Node::initialize_internal_node(root_page);
         Node::set_node_root(root_page, true);
         set_internal_node_num_cells(root_page, 1);
-        let left_child_max_key = get_node_max_key(left_child_page);
+        let left_child_max_key = get_node_max_key(table,left_child_page);
         set_internal_node_cell(root_page, 0, left_child_page_num, left_child_max_key);
         set_internal_node_right_child(root_page, right_child_page_num);
         Node::set_parent_node(left_child_page, table.root_page_num);
@@ -397,7 +490,15 @@ impl Node {
         }
         u32::from_be_bytes(bytes)
     }
-    unsafe fn update_internal_node_key(node_ptr: *mut u8, key: u32) {}
+    unsafe fn update_internal_node_key(node_ptr: *mut u8, key: u32, new_key:u32) {
+        let old_child_cell_num = Node::find_key_cell_index_internal_node(node_ptr, key);
+        let num_cells = get_internal_node_num_cells(node_ptr);
+        //If num_cells == old_child_cell_num that means it is right child
+        if(num_cells == old_child_cell_num) {return}
+        let child_page_num = get_internal_node_child_page_num(node_ptr,old_child_cell_num);
+        set_internal_node_cell(node_ptr,old_child_cell_num,child_page_num,new_key)
+
+    }
 }
 
 unsafe fn leaf_node_num_cells_ptr(node_ptr: *const u8) -> *const u8 {
@@ -498,19 +599,27 @@ unsafe fn get_internal_node_key(node_ptr: *mut u8, cell_num: u32) -> u32 {
     u32::from_be_bytes(bytes)
 }
 
-unsafe fn get_internal_node_child_page_num(node_ptr: *mut u8, child_num: u32) -> u32 {
+unsafe fn get_internal_node_child_page_num(node_ptr: *mut u8, cell_num: u32) -> u32 {
     let num_cells = get_internal_node_num_cells(node_ptr);
-    if (child_num > num_cells) {
+    if (cell_num > num_cells) {
         panic!("Child number passed is greater than num of keys in node");
-    } else if (child_num == num_cells) {
-        return get_internal_node_right_child(node_ptr);
+    } else if (cell_num == num_cells) {
+        let right_child = get_internal_node_right_child(node_ptr);
+        if(right_child == INVALID_PAGE_NUM){
+            panic!("Tried to access invalid Page num")
+        }
+        return right_child;
     } else {
-        let cell_ptr = get_internal_node_cell_ptr(node_ptr, child_num);
+        let cell_ptr = get_internal_node_cell_ptr(node_ptr, cell_num);
         let mut bytes = [0; 4];
         for i in 0..4 {
             bytes[i] = ptr::read(cell_ptr.add(i))
         }
-        u32::from_be_bytes(bytes)
+       let child_page_num = u32::from_be_bytes(bytes);
+        if(child_page_num == INVALID_PAGE_NUM){
+            panic!("Tried to access invalid Page num") ;
+        }
+        return child_page_num
     }
 }
 
@@ -547,11 +656,12 @@ unsafe fn set_internal_node_cell(node_ptr: *mut u8, cell_num: u32, child_page_nu
     }
 }
 
-unsafe fn get_node_max_key(node_ptr: *mut u8) -> u32 {
+unsafe fn get_node_max_key(table: &mut Table,node_ptr: *mut u8) -> u32 {
     match Node::get_node_type(node_ptr) {
         NodeType::INTERNAL => {
-            let num_cells = get_internal_node_num_cells(node_ptr);
-            get_internal_node_key(node_ptr, num_cells - 1)
+            let right_child_page_num = get_internal_node_right_child(node_ptr);
+            let right_child_ptr = table.pager.get_page(right_child_page_num).unwrap();
+            get_node_max_key(table,right_child_ptr)
         }
         NodeType::LEAF => {
             let num_cells = Node::get_leaf_node_num_cells(node_ptr);

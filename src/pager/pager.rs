@@ -5,6 +5,7 @@ use std::fs::{File, OpenOptions};
 use std::io::{Error, ErrorKind, Read, Seek, SeekFrom, Write};
 use std::ptr::{null, slice_from_raw_parts};
 use std::{io, mem};
+use crate::node::node::Node;
 
 pub const TABLE_MAX_PAGES: u32 = 100;
 
@@ -39,7 +40,7 @@ impl Pager {
     }
 
     pub fn get_page(&mut self, page_num: u32) -> Result<*mut u8, Error> {
-        if (page_num > TABLE_MAX_PAGES) {
+        if (page_num >= TABLE_MAX_PAGES) {
             return Err(Error::new(
                 ErrorKind::Other,
                 "Tried to fetch page number out of bounds",

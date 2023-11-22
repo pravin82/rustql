@@ -185,8 +185,8 @@ fn print_tree() {
     start_test();
     let mut table: Table = unsafe { Table::db_open(DB_FILE_NAME) };
     let mut result = Vec::new();
-    let ids = vec![3, 1, 14, 2, 16, 13, 10, 5, 8, 6, 12, 7, 11, 9, 4, 15];
-    // let mut ids = (1..=16).collect();
+   // let ids = vec![3, 1, 14, 2, 16, 13, 10, 5, 8, 6, 12, 7, 11, 9, 4, 15];
+     let mut ids:Vec<u32> = (1..=9).collect();
     //shuffle_list(&mut ids);
 
     for id in ids {
@@ -199,7 +199,7 @@ fn print_tree() {
         result = Vec::new()
     }
     result = Vec::new();
-   // rustql::run(format!(".btree"), &mut table, &mut io::stdout());
+    rustql::run(format!(".btree"), &mut table, &mut io::stdout());
     rustql::run(format!(".btree"), &mut table, &mut result);
     assert_eq!(
         result,
