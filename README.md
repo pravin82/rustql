@@ -5,3 +5,11 @@ Command to run
 ```
 cargo run filename.db
 ```
+insert command 
+```
+insert 1 pravin email
+```
+select command
+```
+select
+```
